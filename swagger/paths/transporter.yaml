@@ -1,17 +1,39 @@
-transporter:
+# /app/swagger/paths/transporter.yaml
+
+sendOtp:
   post:
-    summary: Send OTP to Transporter Email for Verification
-    description: Sends a One-Time Password (OTP) to the specified transporter email for verification purposes during signup.
+    summary: Send OTP to transporter
+    operationId: sendTransporterOtp
     tags:
-      - Transporter
+      - Transporter Auth
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              email:
-                type: string
-                format: email
-                example:
+            # FIX: Changed absolute path to a relative file path reference
+            $ref: '../schemas/transporter.schema.yaml#/SendOtpRequest' 
+    responses:
+      '200':
+        description: OTP sent successfully
+      '429':
+        description: Too many requests
+
+verifyOtp:
+  post:
+    summary: Verify transporter OTP
+    operationId: verifyTransporterOtp
+    tags:
+      - Transporter Auth
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            # FIX: Changed absolute path to a relative file path reference
+            $ref: '../schemas/transporter.schema.yaml#/VerifyOtpRequest'
+    responses:
+      '200':
+        description: OTP verified
+      '400':
+        description: Invalid OTP

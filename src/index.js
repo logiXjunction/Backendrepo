@@ -8,8 +8,7 @@ const cors = require('cors');
 const sequelize = require('./config/database');
 const { redisClient } = require('./config/redis');
 const transporterRoutes = require('./routes/transporterRoutes');
-const { swaggerUi, swaggerDocument } = require('./config/swagger');
-
+const { swaggerUi, getSwaggerDocument } = require('./config/swagger');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -48,8 +47,6 @@ app.get('/', (req, res) => {
 /* -------------------- API ROUTES -------------------- */
 app.use('/api/transporters', transporterRoutes);
 
-/* -------------------- SWAGGER DOCS -------------------- */
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 /* -------------------- GLOBAL ERROR HANDLER -------------------- */
 app.use((err, req, res, next) => {
@@ -63,23 +60,30 @@ app.use((err, req, res, next) => {
 
 /* -------------------- SERVER START -------------------- */
 const startServer = async () => {
-  try {
-    await sequelize.authenticate();
-    console.log('✅ Database connected');
+    try {
+        // 1. Get the resolved Swagger document
+        const swaggerDocument = await getSwaggerDocument();
 
-    if (!redisClient.isOpen) {
-      await redisClient.connect();
-      console.log('✅ Redis connected');
+        // 2. Set up the Swagger route (Corrected line)
+        app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument)); 
+
+        // 3. Authenticate Sequelize (Start this *after* the docs route is set)
+        await sequelize.authenticate(); // <--- This line is now correctly separated
+        console.log('✅ Database connected');
+
+        if (!redisClient.isOpen) {
+            await redisClient.connect();
+            console.log('✅ Redis connected');
+        }
+
+        app.listen(PORT, () => {
+            console.log(`Ultron server running at http://localhost:${PORT}`);
+            console.log(`Swagger docs at http://localhost:${PORT}/docs`);
+        });
+    } catch (error) {
+        console.error('Unable to start server:', error);
+        process.exit(1);
     }
-
-    app.listen(PORT, () => {
-      console.log(`Ultron server running at http://localhost:${PORT}`);
-      console.log(`Swagger docs at http://localhost:${PORT}/docs`);
-    });
-  } catch (error) {
-    console.error('Unable to start server:', error);
-    process.exit(1);
-  }
 };
 
 startServer();

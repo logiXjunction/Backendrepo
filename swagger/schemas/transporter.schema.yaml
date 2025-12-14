@@ -1,0 +1,24 @@
+SendOtpRequest:
+  type: object
+  required:
+    - email
+  properties:
+    email:
+      type: string
+      description: Transporter registered email address
+      example: "transporter@example.com"
+
+VerifyOtpRequest:
+  type: object
+  required:
+    - email
+    - otp
+  properties:
+    email:
+      type: string
+      description: Transporter registered email address
+      example: "transporter@example.com"
+    otp:
+      type: string
+      description: 6-digit OTP sent to transporter
+      example: "123456"

@@ -7,9 +7,13 @@ services:
       - "3000:3000"
     env_file:
       - .env
+    # --- FIX 1: Change depends_on to wait for the database to be 'healthy' ---
     depends_on:
-      - mysql
-      - redis
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started # Redis is usually quick, 'service_started' is fine
+    # -------------------------------------------------------------------------
     volumes:
       - .:/app
       - /app/node_modules
@@ -24,6 +28,13 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    # --- FIX 2: Add healthcheck to verify DB is ready to accept connections ---
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"] # Use the root password from environment
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    # -------------------------------------------------------------------------
 
   redis:
     image: redis:7

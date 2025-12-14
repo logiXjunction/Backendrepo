@@ -1,0 +1,24 @@
+openapi: 3.0.0
+info:
+  title: LogiXbackend API
+  version: 1.0.0
+
+servers:
+  - url: /api
+
+paths:
+  /api/transporter/send-otp:
+    # Reference the path definition in the external transporter.yaml file
+    $ref: './paths/transporter.yaml#/sendOtp'
+
+  /api/transporter/verify-otp:
+    # Reference the path definition in the external transporter.yaml file
+    $ref: './paths/transporter.yaml#/verifyOtp'
+
+components:
+  schemas:
+    # Reference the schemas in the external transporter.schema.yaml file
+    SendOtpRequest:
+      $ref: './schemas/transporter.schema.yaml#/SendOtpRequest'
+    VerifyOtpRequest:
+      $ref: './schemas/transporter.schema.yaml#/VerifyOtpRequest'
