@@ -9,25 +9,25 @@ const Ftl = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
-    shipperId: {
+    clientId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "shippers",
+        model: "clients",
         key: "id",
       },
-      field: "shipper_id",
+      field: "client_id",
     },
     // --- Pickup Info ---
-    pickupAddressLine1: {
+    pickupAddressLine: {
       type: DataTypes.STRING,
       allowNull: false,
       field: "pickup_address_line_1",
     },
-    pickupAddressLine2: {
+    pickupCity: {
       type: DataTypes.STRING,
       allowNull: true,
-      field: "pickup_address_line_2",
+      field: "pickup_city",
     },
     pickupState: {
       type: DataTypes.STRING,
@@ -41,25 +41,25 @@ const Ftl = sequelize.define(
     },
 
     // --- Drop Info ---
-    dropAddressLine1: {
+    deliveryAddressLine: {
       type: DataTypes.STRING,
       allowNull: false,
-      field: "drop_address_line_1",
+      field: "delivery_address_line_1",
     },
-    dropAddressLine2: {
+    deliveryCity: {
       type: DataTypes.STRING,
       allowNull: true,
-      field: "drop_address_line_2",
+      field: "delivery_city",
     },
-    dropState: {
+    deliveryState: {
       type: DataTypes.STRING,
       allowNull: false,
-      field: "drop_state",
+      field: "delivery_state",
     },
-    dropPincode: {
+    deliveryPincode: {
       type: DataTypes.STRING,
       allowNull: false,
-      field: "drop_pincode",
+      field: "delivery_pincode",
     },
 
     // --- Schedule ---
@@ -97,13 +97,10 @@ const Ftl = sequelize.define(
       allowNull: true,
       field: "volumetric_weight_kg",
     },
-    dimension: {
+    dimensionUnit: {
       type: DataTypes.STRING,
       allowNull: true,
-    },
-    vehicleType: {
-      type: DataTypes.STRING,
-      allowNull: true,
+      field: "dimension_unit",
     },
     smallVehicleType: {
       type: DataTypes.STRING,
@@ -158,17 +155,16 @@ const Ftl = sequelize.define(
       defaultValue: 0,
       field: "no_of_labours",
     },
-    // --- Status & Cost ---
     status: {
       type: DataTypes.ENUM(
-        "REQUESTED",
-        "OFFER_SENT",
-        "CONFIRMED",
-        "REJECTED",
-        "MODIFICATION_REQUESTED",
-        "COMPLETED"
+        "requested",
+        "offer_sent",
+        "confirmed",
+        "rejected",
+        "modification_requested",
+        "completed"
       ),
-      defaultValue: "REQUESTED",
+      defaultValue: "requested",
       allowNull: false,
     },
     cost: {

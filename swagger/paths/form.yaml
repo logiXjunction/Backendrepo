@@ -1,0 +1,48 @@
+Ftl:
+  post:
+    summary: FTL Form Submission
+    description: Allows clients to submit a Full Truck Load (FTL) form without needing to register or sign up. The form captures essential details required for FTL services. If email already exists then map this form to that account if not then create a new account based on email user provides in the form.
+                **Validation Warning (Conditional Fields):** This form uses complex validation logic. Certain fields become mandatory based on the values chosen in other fields (e.g., if 'transportMode' is 'road', 'truckSize' is required). The schema uses 'if/then' logic for automatic validation.
+    operationId: submitForm
+    tags:
+      - Form
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/ftlRequest.yaml#/FtlRequestSchema'
+    responses:
+      '201':
+        description: FTL request submitted successfully.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: "FTL request successfully submitted and user account (created/mapped) for user@example.com."
+                requestId:
+                  type: string
+                  description: Unique ID for the submitted FTL request.
+                  example: "1"
+                token:
+                  type: string
+                  description: JWT token valid for 24 hours.
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      '400':
+        description: Bad Request - Validation error due to missing required fields or incorrect data types.
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.schema.yaml#/ValidationError'   
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.schema.yaml#/InternalServerError'

@@ -1,8 +1,7 @@
-# /app/swagger/paths/transporter.yaml
-
 sendOtp:
   post:
-    summary: Send OTP to transporter
+    summary: Send OTP to transporter's email
+    description: Sends a 6-digit OTP to the registered email address of the transporter for authentication. Sent OTP is stored in Redis with a 5-minute expiry and is mapped with the transporter's email.(Use nodemailer)
     operationId: sendTransporterOtp
     tags:
       - Transporter Auth
@@ -11,17 +10,44 @@ sendOtp:
       content:
         application/json:
           schema:
-            # FIX: Changed absolute path to a relative file path reference
-            $ref: '../schemas/transporter.schema.yaml#/SendOtpRequest' 
+            type: object
+            properties:
+              email:
+                type: string
+                example: "transporter@example.com"
+
     responses:
       '200':
         description: OTP sent successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "OTP sent successfully to transporter@example.com"
       '429':
         description: Too many requests
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Too many OTP requests. Please try again later."
+      '409':
+        description: Email Already Exists in Database
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.schema.yaml#/UserAlreadyExistsError'
 
 verifyOtp:
   post:
     summary: Verify transporter OTP
+    description: Verifies the 6-digit OTP sent to the transporter's registered email address.(Handle all edge cases like expired OTP, incorrect OTP, etc.). After user is verified, generate a JWT token({email}) valid for 10 minutes and return it in the response.
     operationId: verifyTransporterOtp
     tags:
       - Transporter Auth
@@ -30,10 +56,154 @@ verifyOtp:
       content:
         application/json:
           schema:
-            # FIX: Changed absolute path to a relative file path reference
-            $ref: '../schemas/transporter.schema.yaml#/VerifyOtpRequest'
+            type: object
+            properties:
+              email:
+                type: string
+                example: "transporter@example.com"
+              otp:
+                type: string
+                example: "123456"
     responses:
       '200':
         description: OTP verified
+        content:
+          application/json:
+            schema:
+            type: object
+            properties: 
+              token:
+                type: string
+                description: JWT token valid for 10 minutes contianing transporter's email
+                example: "eyJhbGciOi--"
       '400':
-        description: Invalid OTP
+        description: Invalid OTP/Wrong OTP
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Invalid OTP. Please try again."
+        '401':
+          description: Expired OTP
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "OTP has expired. Please request a new one."
+
+
+registerTransporter:
+  post:
+    summary: Register a new transporter
+    description: Registers a new transporter in the system using the provided info. Requires a valid JWT token obtained after OTP verification. Password must be hashed before storing in the database(Use instance method). Make sure to match the email in the token with the email in the request body. 
+    operationId: registerTransporter
+    tags:
+      - Transporter Auth
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+                example: "transporter@gmail.com"
+              password:
+                type: string
+                example: "StrongPassword123"
+              companyName:
+                type: string
+                example: "FastTransports Inc."
+              companyAddress:
+                type: string
+                example: "1234 Transport Lane, Cityville, Country"
+              designation:
+                type: string
+                example: "Logistics Manager"
+              gstNumber:
+                type: string
+                example: "22AAAAA0000A1Z5"
+    responses:
+      '201':
+        description: Transporter registered successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Transporter registered successfully."
+      '400':
+        description: Bad Request - Invalid input data(bad email format, weak password, missing fields, etc.)
+      
+      '401':
+        description: Unauthorized - Invalid or missing JWT token
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.schema.yaml#/UnAuthorizedError'
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.schema.yaml#/InternalServerError'
+
+loginTransporter:
+  post:
+    summary: Transporter login
+    description: Authenticates a transporter using email and password. On successful authentication, generates a JWT token valid for 7 days and returns it in the response. JWT includes their role as 'transporter', email,id.
+    operationId: loginTransporter
+    tags:
+      - Transporter Auth
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+                example: "transporter@gmail.com"
+              password:
+                type: string
+                example: "StrongPassword123"
+    responses:
+      '200':
+        description: Login successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  description: JWT token valid for 7 days
+                  example: "eyJhbGciOi--"
+                message:
+                  type: string
+                  example: "Login successful."
+      '401':
+        description: Unauthorized - Invalid email or password
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.schema.yaml#/UnAuthorizedError'
+
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.schema.yaml#/InternalServerError'

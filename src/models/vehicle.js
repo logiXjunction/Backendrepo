@@ -62,7 +62,7 @@ const Vehicle = sequelize.define('Vehicle', {
   status:{
     type: DataTypes.ENUM('verified','unverified','suspended'),
     allowNull: false,
-    defaultValue: 'inactive',
+    defaultValue: 'unverified',
   }
 
 }, {

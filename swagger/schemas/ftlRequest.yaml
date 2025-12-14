@@ -1,0 +1,163 @@
+FtlRequestSchema:
+            type: object
+            properties:
+              pickupAddressLine:
+                type: string
+                example: "123 Main St"
+              pickupCity:
+                type: string
+                example: "Suite 400"
+              pickupState:  
+                type: string
+                example: "Delhi"
+              pickupPincode:
+                type: string
+                example: "90001"      
+              deliveryAddressLine:
+                type: string
+                example: "456 Elm St"
+              deliveryCity:
+                type: string
+                example: "Apt 12B"
+              deliveryState:  
+                type: string
+                example: "Mumbai"
+              deliveryPincode:
+                type: string
+                example: "400001"
+              expectedPickupDate:
+                type: string
+                format: date
+                example: "2024-07-15"
+              expectedDeliveryDate:
+                type: string 
+                format: date
+                example: "2024-07-20"
+              materialType:
+                type: string
+                example: "Electronics"
+              customMaterialType:
+                type: string
+                description: Specify if materialType is 'Others'
+                example: "XYZ"
+              weightKg:
+                type: number
+                example: 2500.75
+              length:
+                type: number
+                example: 400.5
+              breadth:
+                type: number
+                example: 200.0
+              height:
+                 type: number
+                 example: 180.25
+              dimensionUnit:
+                type: string
+                example: "cm"     
+              volumetricWeightKg:
+                type: number
+                example: 3000.0
+                description: Volumetric weight in kilograms. Get it from length, breadth, height and dimensionUnit
+              bodyType:
+                type: string
+                enum: [open, closed]
+                example: "closed"
+              coolingType:
+                type: string
+                enum: [frozen, chiller, ambient]
+                example: "frozen"
+                description: Specify if bodyType is 'closed'
+              manpowerRequired:
+                type: string
+                enum: [yes, no]
+                example: yes
+              noOflabour:
+                type: integer
+                example: 4
+                description: Number of labour required. Specify if manpowerRequired is 'yes'
+              transportMode:
+                type: string
+                enum: [road, air, rail, sea]
+                example: "road"
+              truckSize:
+                type: string
+                example: "small_vehicle"
+                description: If  transport mode is road 
+              smallVehicleType:
+                type: string
+                example: "Tata Ace"
+                description: If truckSize is 'small_vehicle' in truckSize
+              email:
+                type: string
+                example: "user@example.com"
+              contactNumber:
+                type: string
+                example: "1234567890"
+              contactName:
+                type: string
+                example: "Vishnu"
+              valueOfMaterial:
+                type: string
+                example: "50000"
+                description: optional
+            required:
+              - pickupAddressLine
+              - pickupCity
+              - pickupState
+              - pickupPincode
+              - deliveryAddressLine
+              - deliveryCity
+              - deliveryState
+              - deliveryPincode
+              - expectedPickupDate
+              - expectedDeliveryDate
+              - materialType
+              - weightKg
+              - length
+              - breadth
+              - height
+              - dimensionUnit
+              - volumetricWeightKg
+              - bodyType
+              - manpowerRequired
+              - transportMode
+              - email
+              - contactNumber
+              - contactName
+            
+            allOf:
+              - if:
+                  properties:
+                    materialType:
+                      const: Others 
+                then:
+                  required: [customMaterialType]
+
+              - if:
+                  properties:
+                    bodyType:
+                      const: closed
+                then:
+                  required: [coolingType]
+
+              - if:
+                  properties:
+                    manpowerRequired:
+                      const: yes
+                then:
+                  required: [noOflabour]
+
+              - if:
+                  properties:
+                    transportMode:
+                      const: road
+                then:
+                  required: [truckSize]
+                
+              - if:
+                  properties:
+                    truckSize:
+                      const: small_vehicle
+                then:
+                  required: [smallVehicleType]

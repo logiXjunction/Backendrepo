@@ -1,0 +1,61 @@
+UserAlreadyExistsError:
+        description: User with this email already exists.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "User with this email already exists."
+
+UnAuthorizedError:
+  type: object
+  properties:
+    message:
+      type: string
+      example: "Unauthorized access. Please provide valid credentials."
+
+
+InternalServerError:
+  type: object
+  properties:
+    message:
+      type: string
+      example: "An unexpected error occurred. Please try again later."
+
+
+ValidationError:
+  type: object
+  description: Standard response format for client-side validation failures (HTTP 400 Bad Request).
+  required:
+    - success
+    - message
+    - errors
+  properties:
+    success:
+      type: boolean
+      example: false
+      description: Always false for an error response.
+    message:
+      type: string
+      example: "Validation failed for request body."
+      description: A general message indicating a validation error occurred.
+    errors:
+      type: array
+      description: List of specific validation issues.
+      items:
+        type: object
+        properties:
+          field:
+            type: string
+            description: The field name that failed validation.
+            example: "pickupPincode"
+          issue:
+            type: string
+            description: The specific reason for the failure.
+            example: "Value must be a valid 6-digit string."
+          location:
+            type: string
+            description: Where the error occurred (e.g., 'body', 'query', 'header').
+            example: "body"

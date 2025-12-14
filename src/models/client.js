@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const bcrypt = require('bcrypt');
 const sequelize = require('../config/database');
 
-const Shipper = sequelize.define('Shipper', {
+const Client = sequelize.define('Client', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -66,9 +66,9 @@ const Shipper = sequelize.define('Shipper', {
     field: 'updated_at',
   }
 }, {
-  tableName: 'shippers',
+  tableName: 'clients',
   timestamps: true,
 });
 
 
-module.exports = Shipper;
+module.exports = Client;

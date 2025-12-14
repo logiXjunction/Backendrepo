@@ -7,18 +7,36 @@ servers:
   - url: /api
 
 paths:
-  /api/transporter/send-otp:
-    # Reference the path definition in the external transporter.yaml file
+  /transporter/send-otp:
     $ref: './paths/transporter.yaml#/sendOtp'
-
-  /api/transporter/verify-otp:
-    # Reference the path definition in the external transporter.yaml file
+  /transporter/verify-otp:
     $ref: './paths/transporter.yaml#/verifyOtp'
+  /transporter/register:
+    $ref: './paths/transporter.yaml#/registerTransporter'
+  /transporter/login:
+    $ref: './paths/transporter.yaml#/loginTransporter'
+  /form/ftl:
+    $ref: './paths/form.yaml#/Ftl'
 
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Enter the JWT token obtained after OTP verification.
   schemas:
-    # Reference the schemas in the external transporter.schema.yaml file
+    FtlRequestSchema:
+      $ref: './schemas/ftlRequest.yaml#/FtlRequestSchema'
     SendOtpRequest:
       $ref: './schemas/transporter.schema.yaml#/SendOtpRequest'
     VerifyOtpRequest:
       $ref: './schemas/transporter.schema.yaml#/VerifyOtpRequest'
+    UserAlreadyExistsError:
+      $ref: './schemas/common.schema.yaml#/UserAlreadyExistsError'
+    UnAuthorizedError:
+      $ref: './schemas/common.schema.yaml#/UnAuthorizedError'
+    InternalServerError:
+      $ref: './schemas/common.schema.yaml#/InternalServerError'
+    ValidationError:
+      $ref: './schemas/common.schema.yaml#/ValidationError'

@@ -18,6 +18,7 @@ const allowedOrigins = [
   'https://logixjunction.com',
   'https://www.logixjunction.com',
   'https://logix-frontend-sigma.vercel.app',
+  'http://localhost:3000'
 ];
 
 app.use(
@@ -45,7 +46,7 @@ app.get('/', (req, res) => {
 });
 
 /* -------------------- API ROUTES -------------------- */
-app.use('/api/transporters', transporterRoutes);
+app.use('/api/transporter', transporterRoutes);
 
 
 /* -------------------- GLOBAL ERROR HANDLER -------------------- */
@@ -61,15 +62,14 @@ app.use((err, req, res, next) => {
 /* -------------------- SERVER START -------------------- */
 const startServer = async () => {
     try {
-        // 1. Get the resolved Swagger document
         const swaggerDocument = await getSwaggerDocument();
 
-        // 2. Set up the Swagger route (Corrected line)
         app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument)); 
 
-        // 3. Authenticate Sequelize (Start this *after* the docs route is set)
-        await sequelize.authenticate(); // <--- This line is now correctly separated
+        await sequelize.authenticate();
         console.log('✅ Database connected');
+        await sequelize.sync(); 
+        console.log('✅ Database synchronized (tables created/verified)');
 
         if (!redisClient.isOpen) {
             await redisClient.connect();
