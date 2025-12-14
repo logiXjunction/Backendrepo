@@ -1,9 +1,21 @@
 const redis = require('redis');
 
-// Create Redis client using URL from .env
-const redisClient = redis.createClient({
-  url: process.env.REDIS_URL,
-});
+let redisClient;
+
+if (process.env.NODE_ENV === 'production') {
+  // Production: Cloud Redis (Upstash / ElastiCache)
+  redisClient = redis.createClient({
+    url: process.env.REDIS_URL,
+  });
+} else {
+  // Development: Redis in Docker
+  redisClient = redis.createClient({
+    socket: {
+      host: process.env.REDIS_HOST || 'redis',
+      port: process.env.REDIS_PORT || 6379,
+    },
+  });
+}
 
 redisClient.on('error', (err) => {
   console.error('❌ Redis connection error:', err);

@@ -1,12 +1,14 @@
-const AWS = require("aws-sdk");
-const { v4: uuidv4 } = require("uuid");
-const path = require("path");
+const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+const { v4: uuidv4 } = require('uuid');
+const path = require('path');
 
-// Configure AWS SDK
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+const s3 = new S3Client({
   region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
 });
 
 // Upload file to S3 (private by default)
@@ -15,31 +17,30 @@ const uploadToS3 = async (file) => {
 
   const fileKey = `${uuidv4()}${path.extname(file.originalname)}`;
 
-  const params = {
+  const command = new PutObjectCommand({
     Bucket: process.env.AWS_S3_BUCKET,
     Key: fileKey,
     Body: file.buffer,
     ContentType: file.mimetype,
-    ACL: "private", // file remains private
-  };
+  });
 
-  await s3.upload(params).promise();
+  await s3.send(command);
 
-  // return ONLY the key (simpler for DB + controller)
   return fileKey;
 };
 
-// Generate signed URL (for viewing/downloading)
-const getSignedUrlFromS3 = (fileKey, expiresInSeconds = 300) => {
+// Generate signed URL (view/download)
+const getSignedUrlFromS3 = async (fileKey, expiresInSeconds = 300) => {
   if (!fileKey) return null;
 
-  const params = {
+  const command = new GetObjectCommand({
     Bucket: process.env.AWS_S3_BUCKET,
     Key: fileKey,
-    Expires: expiresInSeconds, // e.g. 300 = 5 minutes
-  };
+  });
 
-  return s3.getSignedUrl("getObject", params);
+  return await getSignedUrl(s3, command, {
+    expiresIn: expiresInSeconds,
+  });
 };
 
 module.exports = {

@@ -1,0 +1,17 @@
+transporter:
+  post:
+    summary: Send OTP to Transporter Email for Verification
+    description: Sends a One-Time Password (OTP) to the specified transporter email for verification purposes during signup.
+    tags:
+      - Transporter
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+                format: email
+                example:

@@ -8,22 +8,25 @@ const Transporter = sequelize.define('Transporter', {
     primaryKey: true,
     autoIncrement: true,
   },
-  name: {
+  ownerName: {
     type: DataTypes.STRING,
-    field: 'name',
-    allowNull: false, 
+    field: 'owner_name',
+    allowNull: true,
+  },
+  ownerPhoneNumber: {
+    type: DataTypes.STRING,
+    field: 'owner_phone_number',
+    allowNull: true,
   },
   phoneNumber: {
     type: DataTypes.STRING,
     field: 'phone_number',
-    allowNull: false,
-    validate: {
-      isTenDigitNumber(value) {
-        if (value && !/^\d{10}$/.test(value)) {
-          throw new Error('Phone number must be a 10 digit number');
-        }
-      }
-    }
+    allowNull: false
+  },
+  designation: {
+    type: DataTypes.STRING,
+    field: 'designation',
+    allowNull: false
   },
   companyName: {
     type: DataTypes.STRING,
@@ -33,11 +36,11 @@ const Transporter = sequelize.define('Transporter', {
   companyAddress: {
     type: DataTypes.TEXT,
     field: 'company_address',
-    allowNull: false
+    allowNull: false,
   },
   email: {
     type: DataTypes.STRING,
-    allowNull: false, 
+    allowNull: false,
     field: 'email',
     unique: true,
     validate: { isEmail: true }
@@ -47,18 +50,35 @@ const Transporter = sequelize.define('Transporter', {
     field: 'gst_number',
     allowNull: false,
     validate: {
-      // Custom GST validation
       isValidGST(value) {
         if (value && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(value)) {
           throw new Error('Invalid GST number format');
         }
       }
     }
-  },  
+  },
+  customerServiceNumber: {
+    type: DataTypes.STRING,
+    field: 'customer_service_number',
+    allowNull: true,
+  },
   password: {
     type: DataTypes.STRING,
     allowNull: false,
     field: 'password',
+  },
+  profileStatus: {
+    type: DataTypes.ENUM('pending', 'completed'),
+    allowNull: false,
+    defaultValue: 'pending',
+    field: 'profile_status',
+  },
+  
+  status: {
+    type: DataTypes.ENUM('verified', 'unverified', 'suspended'),
+    allowNull: false,
+    defaultValue: 'unverified',
+    field: 'status',
   },
   createdAt: {
     type: DataTypes.DATE,
@@ -90,7 +110,7 @@ const Transporter = sequelize.define('Transporter', {
 });
 
 // Instance method to verify password
-Transporter.prototype.comparePassword = async function(candidatePassword) {
+Transporter.prototype.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 

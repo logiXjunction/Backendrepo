@@ -121,7 +121,6 @@ const Shipment = sequelize.define(
       allowNull: true,
       field: "additional_notes",
     },
-    // --- Logistics ---
     transportMode: {
       type: DataTypes.STRING,
       allowNull: false,
