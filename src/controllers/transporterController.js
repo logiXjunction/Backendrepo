@@ -1,6 +1,7 @@
 const Transporter = require("../models/transporter");
 const Vehicle = require("../models/vehicle");
 const { redisClient } = require('../config/redis');
+const {nodemailerTransporter} = require('../config/nodemailer');
 
 const sendOtp = async (req, res) => {
     try {
@@ -20,6 +21,7 @@ const sendOtp = async (req, res) => {
         }
         await redisClient.setEx(`otp:${email}`, 600, otp);
         //sending otp to email using nodemailer
+
         
         res.status(200).json({ success: true, message: 'OTP sent successfully' });
     } catch (error) {

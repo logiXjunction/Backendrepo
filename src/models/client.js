@@ -11,7 +11,7 @@ const Client = sequelize.define('Client', {
   name: {
     type: DataTypes.STRING,
     field: 'name',
-    allowNull: true, 
+    allowNull: true,   //optional
   },
   phoneNumber: {
     type: DataTypes.STRING,
@@ -23,16 +23,16 @@ const Client = sequelize.define('Client', {
           throw new Error('Phone number must be a 10 digit number');
         }
       }
-    }
+    } // not optional
   },
   companyName: {
     type: DataTypes.STRING,
     allowNull: true,
-    field: 'company_name'
+    field: 'company_name'   //optional
   },
   companyAddress: {
     type: DataTypes.TEXT,
-    field: 'company_address',
+    field: 'company_address',   //optional
     allowNull: true
   },
   email: {
@@ -40,7 +40,7 @@ const Client = sequelize.define('Client', {
     allowNull: false, 
     field: 'email',
     unique: true,
-    validate: { isEmail: true }
+    validate: { isEmail: true }  // not optional
   },
   gstNumber: {
     type: DataTypes.STRING,
@@ -53,7 +53,7 @@ const Client = sequelize.define('Client', {
           throw new Error('Invalid GST number format');
         }
       }
-    }
+    }  // optional
   },  
   createdAt: {
     type: DataTypes.DATE,
