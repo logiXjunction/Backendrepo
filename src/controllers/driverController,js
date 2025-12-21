@@ -1,0 +1,108 @@
+const Driver = require('../models/driver');
+const uploadToS3 = require('../utils/s3upload');
+const redis = require('../config/redis'); // still used by getAllDrivers
+
+const addDriver = async (req, res) => {
+  try {
+    const { driverName, driverPhoneNumber } = req.body;
+
+    if (!driverName || !driverPhoneNumber) {
+      return res.status(400).json({ message: 'Missing required fields.' });
+    }
+
+
+    if (!req.files?.aadhar || !req.files?.license || !req.files?.photo) {
+      return res.status(400).json({ message: 'All documents are required.' });
+    }
+    const existingDriver = await Driver.findOne({ where: { driverPhoneNumber } });
+    if (existingDriver) {
+      return res.status(409).json({ message: 'Driver with this phone number already exists.' });
+    }
+
+    const transporterId = req.transporter.id;
+    const basePath = `transporters/${transporterId}/drivers/${driverPhoneNumber}`;
+
+    const [aadharKey, licenseKey, photoKey] = await Promise.all([
+      uploadToS3({
+        buffer: req.files.aadhar[0].buffer,
+        mimeType: req.files.aadhar[0].mimetype,
+        key: `${basePath}/aadhar`
+      }),
+      uploadToS3({
+        buffer: req.files.license[0].buffer,
+        mimeType: req.files.license[0].mimetype,
+        key: `${basePath}/license`
+      }),
+      uploadToS3({
+        buffer: req.files.photo[0].buffer,
+        mimeType: req.files.photo[0].mimetype,
+        key: `${basePath}/photo`
+      })
+    ]);
+
+    const driver = await Driver.create({
+      driverName,
+      driverPhoneNumber,
+      transporterId,
+      driverAadharUpload: aadharKey,
+      driverLicenseUpload: licenseKey,
+      driverPhotoUpload: photoKey
+    });
+
+    res.status(201).json({
+      message: 'Driver created successfully.',
+      driverId: driver.id
+    });
+  } catch (error) {
+    console.error('Add driver error:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+const DRIVER_LIST_CACHE_TTL = 30 * 60; // 30 minutes
+
+const getAllDrivers = async (req, res) => {
+  try {
+    const transporterId = req.transporter.id;
+    const cacheKey = `drivers:transporter:${transporterId}`;
+
+    // 1️⃣ Redis first
+    const cachedDrivers = await redis.get(cacheKey);
+    if (cachedDrivers) {
+      return res.status(200).json({
+        message: 'Drivers fetched successfully.',
+        source: 'cache',
+        drivers: JSON.parse(cachedDrivers)
+      });
+    }
+
+    // 2️⃣ DB fallback
+    const drivers = await Driver.findAll({
+      where: { transporterId },
+      order: [['id', 'DESC']]
+    });
+
+    // 3️⃣ Cache result
+    await redis.setex(
+      cacheKey,
+      DRIVER_LIST_CACHE_TTL,
+      JSON.stringify(drivers)
+    );
+
+    res.status(200).json({
+      message: 'Drivers fetched successfully.',
+      source: 'db',
+      drivers
+    });
+  } catch (error) {
+    console.error('Get all drivers error:', error);
+    res.status(500).json({
+      message: 'Internal Server Error'
+    });
+  }
+};
+
+module.exports = {
+  addDriver,
+  getAllDrivers
+};

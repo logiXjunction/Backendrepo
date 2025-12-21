@@ -5,7 +5,11 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "migrate:dev": "sequelize-cli db:migrate --env development",
+    "migrate:undo:dev": "sequelize-cli db:migrate:undo --env development",
+    "migrate:prod": "dotenv -e .production.env -- sequelize-cli db:migrate --env production",
+    "migrate:undo:prod": "dotenv -e .production.env -- sequelize-cli db:migrate:undo --env production"
   },
   "keywords": [],
   "author": "",
@@ -36,7 +40,9 @@
     "yamljs": "^0.3.0"
   },
   "devDependencies": {
+    "dotenv-cli": "^11.0.0",
     "jest": "^30.0.5",
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.1.11",
+    "sequelize-cli": "^6.6.3"
   }
 }

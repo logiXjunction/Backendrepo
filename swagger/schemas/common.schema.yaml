@@ -59,3 +59,11 @@ ValidationError:
             type: string
             description: Where the error occurred (e.g., 'body', 'query', 'header').
             example: "body"
+
+
+UnauthorizedError:
+  type: object
+  properties:
+    message:
+      type: string
+      example: "Unauthorized – Invalid or missing JWT."

@@ -1,0 +1,98 @@
+PackersAndMovers:
+  type: object
+  required:
+    - name
+    - phone
+    - pickupAddress
+    - dropoffAddress
+    - pickupDate
+    - items
+  properties:
+    name:
+      type: string
+      minLength: 1
+      description: Full name of the client
+      example: Vishnu Gupta
+
+    email:
+      type: string
+      format: email
+      description: >
+        Email address of the client. If the email already exists,
+        the request is mapped to the existing user account.
+      example: vishnu@example.com
+
+    phone:
+      type: string
+      pattern: '^[0-9]{10,15}$'
+      description: Client phone number (10–15 digits)
+      example: "9876543210"
+
+    pickupAddress:
+      type: string
+      minLength: 5
+      description: Complete pickup address
+      example: "Flat 203, ABC Apartments, Rohini, Delhi"
+
+    dropoffAddress:
+      type: string
+      minLength: 5
+      description: Complete dropoff address
+      example: "Sector 62, Noida, Uttar Pradesh"
+
+    pickupDate:
+      type: string
+      format: date
+      description: Preferred pickup date
+      example: "2025-01-20"
+
+    pickupTime:
+      type: string
+      format: time
+      description: Preferred pickup time (optional)
+      example: "10:30"
+
+    vehicleType:
+      type: string
+      description: Preferred vehicle type
+      enum:
+        - Mini Truck
+        - 10 ft
+        - 14 ft
+        - 22 ft
+        - Container
+      example: "14 ft"
+
+    estimatedWeight:
+      type: string
+      description: Estimated total weight in kilograms
+      example: "500"
+
+    insurance:
+      type: boolean
+      description: Whether transit insurance is required
+      example: true
+
+    notes:
+      type: string
+      description: Additional notes or special instructions
+      example: "Lift available, narrow staircase"
+
+    items:
+      type: string
+      description: >
+        JSON-stringified array of items to be moved.
+        Each item must include name, qty, and fragile flag.
+      example: |
+        [
+          { "name": "Sofa", "qty": 1, "fragile": false },
+          { "name": "TV", "qty": 1, "fragile": true }
+        ]
+
+    images:
+      type: array
+      description: Reference images (maximum 6 files)
+      maxItems: 6
+      items:
+        type: string
+        format: binary

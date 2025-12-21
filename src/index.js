@@ -8,6 +8,8 @@ const cors = require('cors');
 const sequelize = require('./config/database');
 const { redisClient } = require('./config/redis');
 const transporterRoutes = require('./routes/transporterRoutes');
+const driverRoutes = require('./routes/driverRoutes');
+const vehicleRoutes = require('./routes/vehicleRoutes');
 const { swaggerUi, getSwaggerDocument } = require('./config/swagger');
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -47,7 +49,8 @@ app.get('/', (req, res) => {
 
 /* -------------------- API ROUTES -------------------- */
 app.use('/api/transporter', transporterRoutes);
-
+app.use('/api/driver', driverRoutes);
+app.use('/api/vehicle', vehicleRoutes);
 
 /* -------------------- GLOBAL ERROR HANDLER -------------------- */
 app.use((err, req, res, next) => {
@@ -68,7 +71,6 @@ const startServer = async () => {
 
         await sequelize.authenticate();
         console.log('✅ Database connected');
-        await sequelize.sync(); 
         console.log('✅ Database synchronized (tables created/verified)');
 
         if (!redisClient.isOpen) {

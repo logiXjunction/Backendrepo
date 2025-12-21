@@ -7,7 +7,6 @@ services:
       - "3000:3000"
     env_file:
       - .env
-    # --- FIX 1: Change depends_on to wait for the database to be 'healthy' ---
     depends_on:
       mysql:
         condition: service_healthy

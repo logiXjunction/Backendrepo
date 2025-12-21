@@ -132,6 +132,9 @@ registerTransporter:
               gstNumber:
                 type: string
                 example: "22AAAAA0000A1Z5"
+              phoneNumber:
+                type: number
+                example: 1234567890
     responses:
       '201':
         description: Transporter registered successfully
@@ -201,6 +204,69 @@ loginTransporter:
             schema:
               $ref: '../schemas/common.schema.yaml#/UnAuthorizedError'
 
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.schema.yaml#/InternalServerError'
+
+
+
+TransporterAddVehicle:
+  post:
+    summary: Add vehicle (Transporter)
+    description: >
+      Allows an authenticated transporter to add a vehicle to their account.
+      The transporter is identified using the JWT token provided in the
+      Authorization header.
+
+      Vehicle documents (RC, Road Permit, Pollution Certificate) are uploaded
+      as files using multipart/form-data.
+
+      The `transporterId` is **not accepted in the request body** and is
+      automatically resolved from the authenticated transporter’s JWT.
+    operationId: addVehicleByTransporter
+    tags:
+      - Transporter
+      - Vehicle
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            $ref: '../schemas/vehicle.schema.yaml#/AddVehicleRequest'
+    responses:
+      '201':
+        description: Vehicle added successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Vehicle added successfully and pending verification.
+                vehicleId:
+                  type: string
+                  example: "21"
+      '400':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.schema.yaml#/ValidationError'
+      '401':
+        description: Unauthorized – Invalid or missing JWT
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.schema.yaml#/UnauthorizedError'
       '500':
         description: Internal Server Error
         content:

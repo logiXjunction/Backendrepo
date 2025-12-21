@@ -1,0 +1,56 @@
+AddVehicleRequest:
+  type: object
+  required:
+    - vehicleName
+    - dimension
+    - capacity
+    - vehicleNumber
+    - isRefrigerated
+    - bodyType
+    - rc
+    - roadPermit
+    - pollutionCertificate
+  properties:
+    vehicleName:
+      type: string
+      minLength: 2
+      example: Tata Ace
+
+    dimension:
+      type: string
+      example: "10 x 6 x 6 ft"
+
+    capacity:
+      type: string
+      example: "1.5 Tons"
+
+    vehicleNumber:
+      type: string
+      description: Unique vehicle registration number
+      example: DL01AB1234
+
+    isRefrigerated:
+      type: boolean
+      example: false
+
+    bodyType:
+      type: string
+      enum:
+        - open
+        - closed
+      example: closed
+
+    rc:
+      type: string
+      format: binary
+      description: Registration Certificate document
+
+    roadPermit:
+      type: string
+      format: binary
+      description: Road permit document
+
+    pollutionCertificate:
+      type: string
+      format: binary
+      description: Pollution certificate document

@@ -6,6 +6,8 @@ Ftl:
     operationId: submitForm
     tags:
       - Form
+    security:
+      - BearerAuth: []
     requestBody:
       required: true
       content:
@@ -40,6 +42,125 @@ Ftl:
           application/json:
             schema:
               $ref: '../schemas/common.schema.yaml#/ValidationError'   
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.schema.yaml#/InternalServerError'
+
+
+PackersMovers:
+  post:
+    summary: Packers & Movers Form Submission
+    description: >
+      Allows clients to submit a Packers & Movers service request without
+      requiring prior registration or sign-up. The form captures personal
+      details, pickup and dropoff addresses, shifting date and time, list of
+      items to be moved, optional insurance requirement, and reference images.
+
+      If the email already exists, the request is mapped to the existing user
+      account. If the email does not exist, a new user account is created based
+      on the provided email.
+
+      **Validation Warning:**  
+      This form uses mixed validation logic. Some fields are mandatory
+      (e.g., name, phone, pickup/dropoff address, pickup date, items), while
+      others are optional (e.g., email, insurance, images, notes).
+      The `items` field is expected as a JSON-stringified array when submitted
+      via `multipart/form-data`.
+    operationId: submitPackersMoversForm
+    tags:
+      - Form
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            $ref: '../schemas/packersAndMovers.schema.yaml#/PackersAndMovers'
+    responses:
+      '201':
+        description: Packers & Movers request submitted successfully.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: >
+                    Packers & Movers request successfully submitted and user
+                    account (created/mapped) for user@example.com.
+                requestId:
+                  type: string
+                  description: Unique ID for the submitted Packers & Movers request.
+                  example: "PM-10231"
+                token:
+                  type: string
+                  description: JWT token valid for 24 hours.
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      '400':
+        description: Bad Request – Validation error due to missing required fields,
+          invalid phone number, malformed items JSON, or unsupported image format.
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.schema.yaml#/ValidationError'
+      '500':
+        description: Internal Server Error
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.schema.yaml#/InternalServerError'
+
+
+
+ContactForm:
+  post:
+    summary: Contact Form Submission
+    description: Allows users to submit a contact form with their name and phoneNumber.(Stores the date in the database, no authentication required, {table==contact_forms})
+    operationId: submitContactForm
+    tags:
+      - Form
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - name
+              - phoneNumber
+              - form
+            properties:
+              name:
+                type: string
+                example: "John Doe"
+              phoneNumber:
+                type: string
+                example: "1234567890"
+              form:
+                type: string
+                example: "ptl/courier"
+
+    responses:
+      '200':
+        description: Contact form submitted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Contact form submitted successfully."
+      '400':
+        description: Bad Request - Invalid input data (missing fields, bad phone number format, etc
       '500':
         description: Internal Server Error
         content:

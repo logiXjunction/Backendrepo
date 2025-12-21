@@ -17,6 +17,12 @@ paths:
     $ref: './paths/transporter.yaml#/loginTransporter'
   /form/ftl:
     $ref: './paths/form.yaml#/Ftl'
+  /form/packers-movers:
+    $ref: './paths/form.yaml#/PackersMovers'
+  /form/contact:
+    $ref: './paths/form.yaml#/ContactForm'
+  /transporter/add-vehicle:
+    $ref: './paths/transporter.yaml#/TransporterAddVehicle'
 
 components:
   securitySchemes:
@@ -40,3 +46,7 @@ components:
       $ref: './schemas/common.schema.yaml#/InternalServerError'
     ValidationError:
       $ref: './schemas/common.schema.yaml#/ValidationError'
+    PackersAndMovers:
+      $ref: './schemas/packersAndMovers.schema.yaml#/PackersAndMovers'
+    Vehicle:
+      $ref: './schemas/vehicle.schema.yaml#/AddVehicleRequest'

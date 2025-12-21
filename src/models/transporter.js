@@ -73,7 +73,11 @@ const Transporter = sequelize.define('Transporter', {
     defaultValue: 'pending',
     field: 'profile_status',
   },
-  
+  cinNumber:{
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'cin_number',
+  },
   status: {
     type: DataTypes.ENUM('verified', 'unverified', 'suspended'),
     allowNull: false,
