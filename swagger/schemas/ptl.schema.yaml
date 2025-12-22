@@ -1,0 +1,12 @@
+PtlLead:
+  type: object
+  required:
+    - name
+    - phone
+  properties:
+    name:
+      type: string
+    phone:
+      type: string
+    message:
+      type: string

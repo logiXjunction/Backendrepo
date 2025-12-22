@@ -37,10 +37,16 @@ const Client = sequelize.define('Client', {
   },
   email: {
     type: DataTypes.STRING,
-    allowNull: false, 
+    allowNull: false,
     field: 'email',
     unique: true,
     validate: { isEmail: true }  // not optional
+  },
+  // Password for shipper accounts (hashed via hooks)
+  password: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'password',
   },
   gstNumber: {
     type: DataTypes.STRING,
@@ -54,7 +60,7 @@ const Client = sequelize.define('Client', {
         }
       }
     }  // optional
-  },  
+  },
   createdAt: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW,
@@ -68,7 +74,26 @@ const Client = sequelize.define('Client', {
 }, {
   tableName: 'clients',
   timestamps: true,
+  hooks: {
+    beforeCreate: async (client) => {
+      if (client.password) {
+        const salt = await bcrypt.genSalt(10);
+        client.password = await bcrypt.hash(client.password, salt);
+      }
+    },
+    beforeUpdate: async (client) => {
+      if (client.changed && client.changed('password')) {
+        const salt = await bcrypt.genSalt(10);
+        client.password = await bcrypt.hash(client.password, salt);
+      }
+    },
+  }
 });
 
+// Instance method to verify password
+Client.prototype.comparePassword = async function (candidatePassword) {
+  if (!this.password) return false;
+  return bcrypt.compare(candidatePassword, this.password);
+};
 
 module.exports = Client;

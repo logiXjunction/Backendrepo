@@ -1,0 +1,66 @@
+packers:
+  post:
+    tags:
+      - Services
+    summary: Create Packers & Movers request
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+              email:
+                type: string
+              phone:
+                type: string
+              pickupAddress:
+                type: string
+              dropoffAddress:
+                type: string
+              pickupDate:
+                type: string
+                format: date
+              pickupTime:
+                type: string
+                format: time
+              vehicleType:
+                type: string
+              estimatedWeight:
+                type: number
+              insurance:
+                type: boolean
+              notes:
+                type: string
+              items:
+                type: string
+                description: JSON stringified array of items
+              images:
+                type: array
+                items:
+                  type: string
+                  format: binary
+            required:
+              - name
+              - phone
+              - pickupAddress
+              - dropoffAddress
+              - pickupDate
+    responses:
+      '201':
+        description: Created
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+                id:
+                  type: integer
+      '400':
+        $ref: '../schemas/common.schema.yaml#/ValidationError'

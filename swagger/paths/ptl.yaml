@@ -1,0 +1,23 @@
+ptl:
+  post:
+    summary: Create PTL lead when user selects PTL (name + phone)
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/ptl.schema.yaml#/PtlLead'
+    responses:
+      '201':
+        description: Created
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+                id:
+                  type: integer

@@ -17,7 +17,12 @@ paths:
     $ref: './paths/transporter.yaml#/loginTransporter'
   /form/ftl:
     $ref: './paths/form.yaml#/Ftl'
-
+    # -------------
+  /services/packers:
+    $ref: './paths/packers.yaml#/packers'
+  /services/ptl:
+    $ref: './paths/ptl.yaml#/ptl'
+# -------
 components:
   securitySchemes:
     BearerAuth:
