@@ -17,4 +17,5 @@ router.post('/add-owner-name', verifyJWT, requireTransporter, attachTransporter,
 router.post('/add-owner-phone', verifyJWT, requireTransporter, attachTransporter, addOwnerPhoneNumber);
 router.post('/update-customer-service-number', verifyJWT, requireTransporter, attachTransporter, updateCustomerServiceNumber);
 
+
 module.exports = router;

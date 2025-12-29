@@ -4,7 +4,6 @@ const { redisClient } = require('../config/redis');
 const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
 
-// Configure nodemailer transporter
 const mailTransporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -41,7 +40,6 @@ const sendOtp = async (req, res) => {
         // Send OTP via email using nodemailer (skip in development if no credentials)
         if (process.env.NODE_ENV === 'development' && 
             (!process.env.EMAIL_USER || process.env.EMAIL_USER === 'your-gmail@gmail.com')) {
-            // In development without email credentials, log OTP to console
             console.log(`\n📧 [DEV MODE] OTP for ${email}: ${otp}\n`);
         } else {
             const mailOptions = {

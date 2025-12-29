@@ -1,7 +1,8 @@
 const Vehicle = require('../models/vehicle');
 const uploadToS3 = require('../utils/s3upload');
-const redis = require('../config/redis');
-
+const {redisClient: redis} = require('../config/redis');
+const getSignedS3Url = require('../config/s3SignedUrl')
+console.log(process.env.AWS_REGION);
 const addVehicle = async (req, res) => {
   try {
     const {
@@ -92,18 +93,26 @@ const getAllVehicles = async (req, res) => {
       return res.status(200).json({
         message: 'Vehicles fetched successfully.',
         source: 'cache',
-        vehicles: JSON.parse(cachedVehicles)
+        vehicles: JSON.parse(cachedVehicles),
       });
     }
 
-    // 2️⃣ DB fallback
     const vehicles = await Vehicle.findAll({
       where: { transporterId },
-      order: [['id', 'DESC']]
+      order: [['id', 'DESC']],
+      attributes: [
+        'id',
+        'vehicleName',
+        'vehicleNumber',
+        'capacity',
+        'dimension',
+        'bodyType',
+        'isRefrigerated',
+        'createdAt',
+      ],
     });
 
-    // 3️⃣ Cache result
-    await redis.setex(
+    await redis.setEx(
       cacheKey,
       VEHICLE_LIST_CACHE_TTL,
       JSON.stringify(vehicles)
@@ -112,17 +121,53 @@ const getAllVehicles = async (req, res) => {
     res.status(200).json({
       message: 'Vehicles fetched successfully.',
       source: 'db',
-      vehicles
+      vehicles,
     });
   } catch (error) {
     console.error('Get all vehicles error:', error);
     res.status(500).json({
-      message: 'Internal Server Error'
+      message: 'Internal Server Error',
     });
   }
 };
 
+const getVehicleDocument = async (req, res) => {
+  try {
+    const { vehicleId, type } = req.params;
+    const transporterId = req.transporter.id;
+
+    const vehicle = await Vehicle.findOne({
+      where: { id: vehicleId, transporterId },
+    });
+
+    if (!vehicle) {
+      return res.status(404).json({ message: 'Vehicle not found' });
+    }
+
+    const keyMap = {
+      rc: vehicle.rcUrl,
+      roadPermit: vehicle.roadPermitUrl,
+      pollution: vehicle.PollutionCertificateUrl,
+    };
+
+    const key = keyMap[type];
+
+    if (!key) {
+      return res.status(400).json({ message: 'Invalid document type' });
+    }
+
+    const signedUrl = await getSignedS3Url(key);
+
+    res.json({ url: signedUrl });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to fetch document' });
+  }
+};
+
+
 module.exports = {
   addVehicle,
-  getAllVehicles
+  getAllVehicles,
+  getVehicleDocument
 };

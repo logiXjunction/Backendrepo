@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const Transporter = require('../models/transporter');
 
 /**
- * 1️⃣ Verify JWT token
+ * 1 Verify JWT token
  */
 const verifyJWT = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -27,7 +27,7 @@ const verifyJWT = (req, res, next) => {
 };
 
 /**
- * 2️⃣ Ensure role is transporter
+ * 2️ Ensure role is transporter
  */
 const requireTransporter = (req, res, next) => {
   if (!req.user || req.user.role !== 'transporter') {
@@ -39,7 +39,7 @@ const requireTransporter = (req, res, next) => {
 };
 
 /**
- * 3️⃣ Attach transporter from DB
+ * 3️ Attach transporter from DB
  */
 const attachTransporter = async (req, res, next) => {
   try {
@@ -51,7 +51,7 @@ const attachTransporter = async (req, res, next) => {
       });
     }
 
-    req.transporter = transporter; // 🔥 usable everywhere
+    req.transporter = transporter; 
     next();
   } catch (error) {
     console.error('Transporter middleware error:', error);

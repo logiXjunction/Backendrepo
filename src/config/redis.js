@@ -3,7 +3,7 @@ const redis = require('redis');
 let redisClient;
 
 if (process.env.NODE_ENV === 'production') {
-  // Production: Cloud Redis (Upstash / ElastiCache)
+  // Production: Cloud Redis (Upstash)
   redisClient = redis.createClient({
     url: process.env.REDIS_URL,
   });
@@ -18,7 +18,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 redisClient.on('error', (err) => {
-  console.error('❌ Redis connection error:', err);
+  console.error('Redis connection error:', err);
 });
 
 // Connect immediately
@@ -26,10 +26,10 @@ redisClient.on('error', (err) => {
   try {
     if (!redisClient.isOpen) {
       await redisClient.connect();
-      console.log('✅ Connected to Redis');
+      console.log('Connected to Redis');
     }
   } catch (err) {
-    console.error('❌ Failed to connect to Redis:', err);
+    console.error('Failed to connect to Redis:', err);
   }
 })();
 

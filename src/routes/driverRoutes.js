@@ -1,6 +1,6 @@
 const express = require('express');
 const upload = require('../middlewares/upload.middleware');
-const { addDriver,getAllDrivers } = require('../controllers/driverController,js');
+const { addDriver,getAllDrivers,getDriverDocument } = require('../controllers/driverController,js');
 
 const {
   verifyJWT,
@@ -30,5 +30,13 @@ router.get(
   getAllDrivers
 );
 
+
+router.get(
+  '/:driverId/document/:type',
+  verifyJWT,
+  requireTransporter,
+  attachTransporter,
+  getDriverDocument
+);
 
 module.exports = router;

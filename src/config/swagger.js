@@ -1,4 +1,3 @@
-// config/swagger.js
 
 const swaggerUi = require('swagger-ui-express');
 const SwaggerParser = require('@apidevtools/swagger-parser');

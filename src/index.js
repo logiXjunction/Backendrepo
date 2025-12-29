@@ -47,12 +47,10 @@ app.get('/', (req, res) => {
   });
 });
 
-/* -------------------- API ROUTES -------------------- */
 app.use('/api/transporter', transporterRoutes);
 app.use('/api/driver', driverRoutes);
 app.use('/api/vehicle', vehicleRoutes);
 
-/* -------------------- GLOBAL ERROR HANDLER -------------------- */
 app.use((err, req, res, next) => {
   console.error('Error:', err.message);
 
@@ -62,20 +60,20 @@ app.use((err, req, res, next) => {
   });
 });
 
-/* -------------------- SERVER START -------------------- */
 const startServer = async () => {
     try {
         const swaggerDocument = await getSwaggerDocument();
 
         app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument)); 
+        sequelize.sync();
 
         await sequelize.authenticate();
-        console.log('✅ Database connected');
-        console.log('✅ Database synchronized (tables created/verified)');
+        console.log('Database connected');
+        console.log('Database synchronized (tables created/verified)');
 
         if (!redisClient.isOpen) {
             await redisClient.connect();
-            console.log('✅ Redis connected');
+            console.log('Redis connected');
         }
 
         app.listen(PORT, () => {
