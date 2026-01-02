@@ -79,23 +79,11 @@ const VEHICLE_LIST_CACHE_TTL = 30 * 60; // 30 minutes
 
 /**
  * GET ALL VEHICLES FOR A TRANSPORTER
- * - Redis first
  * - DB fallback
  */
 const getAllVehicles = async (req, res) => {
   try {
     const transporterId = req.transporter.id;
-    const cacheKey = `vehicles:transporter:${transporterId}`;
-
-    // 1️⃣ Redis first
-    const cachedVehicles = await redis.get(cacheKey);
-    if (cachedVehicles) {
-      return res.status(200).json({
-        message: 'Vehicles fetched successfully.',
-        source: 'cache',
-        vehicles: JSON.parse(cachedVehicles),
-      });
-    }
 
     const vehicles = await Vehicle.findAll({
       where: { transporterId },
@@ -111,13 +99,6 @@ const getAllVehicles = async (req, res) => {
         'createdAt',
       ],
     });
-
-    await redis.setEx(
-      cacheKey,
-      VEHICLE_LIST_CACHE_TTL,
-      JSON.stringify(vehicles)
-    );
-
     res.status(200).json({
       message: 'Vehicles fetched successfully.',
       source: 'db',
