@@ -10,6 +10,7 @@ const { redisClient } = require('./config/redis');
 const transporterRoutes = require('./routes/transporterRoutes');
 const driverRoutes = require('./routes/driverRoutes');
 const vehicleRoutes = require('./routes/vehicleRoutes');
+const adminRoutes = require("./routes/adminRoutes");
 const { swaggerUi, getSwaggerDocument } = require('./config/swagger');
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -50,6 +51,9 @@ app.get('/', (req, res) => {
 app.use('/api/transporter', transporterRoutes);
 app.use('/api/driver', driverRoutes);
 app.use('/api/vehicle', vehicleRoutes);
+
+
+app.use("/api/admin",adminRoutes);
 
 app.use((err, req, res, next) => {
   console.error('Error:', err.message);
