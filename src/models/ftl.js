@@ -155,6 +155,12 @@ const Ftl = sequelize.define(
       defaultValue: 0,
       field: "no_of_labours",
     },
+    shipmentType: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'ftl', // Added to match controller
+      field: "shipment_type",
+    },
     status: {
       type: DataTypes.ENUM(
         "requested",

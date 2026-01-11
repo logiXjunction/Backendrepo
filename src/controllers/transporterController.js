@@ -3,7 +3,8 @@ const Vehicle = require("../models/vehicle");
 const { redisClient } = require('../config/redis');
 const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
-
+const { Op } = require('sequelize');
+const Quotation = require('../models/quotation')
 const mailTransporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -260,7 +261,7 @@ const addCinNumber = async (req, res) => {
 }
 };
 
-const addOwnerName = async (req, res) => {
+const updateOwnerName = async (req, res) => {
     try {
         const transporterId = req.transporter.id;
         const { ownerName } = req.body;
@@ -270,9 +271,6 @@ const addOwnerName = async (req, res) => {
         const transporter = await Transporter.findByPk(transporterId);
         if (!transporter) {
             return res.status(404).json({ message: 'Transporter not found.' });
-        }
-        if(transporter.ownerName) {
-            return res.status(400).json({ message: 'Owner name is already set and cannot be updated.' });
         }
         transporter.ownerName = ownerName;
         await transporter.save();
@@ -323,16 +321,52 @@ const updateCustomerServiceNumber = async (req, res) => {
         res.status(500).json({ message: 'Internal Server Error' });
     }   
 };
+const { Ftl, Client } = require('../models');
 
+/**
+ * Get all available FTL shipments for Transporters
+ * Filters for status: 'requested'
+ */
+const getAvailableShipments = async (req, res, next) => {
+    try {
+        const transporterId = req.transporter.id; 
 
-module.exports = {
+        // 1. Get IDs of shipments this transporter has already quoted
+        const quotedShipmentIds = await Quotation.findAll({
+            where: { transporterId },
+            attributes: ['FtlId'],
+            raw: true
+        }).then(quotes => quotes.map(q => q.shipmentId));
+
+        // 2. Find shipments where status is 'requested' AND ID is not in quotedShipmentIds
+        const shipments = await Ftl.findAll({
+            where: {
+                status: 'requested',
+                id: {
+                    [Op.notIn]: quotedShipmentIds
+                }
+            },
+            order: [['created_at', 'DESC']]
+        });
+
+        return res.status(200).json({
+            success: true,
+            count: shipments.length,
+            data: shipments
+        });
+    } catch (error) {
+        console.error('Error fetching available shipments:', error);
+        next(error);
+    }
+};module.exports = {
     sendOtp,
     verifyOtp,
     registerTransporter,
     loginTransporter,
     getTransporterProfile,
     addCinNumber,
-    addOwnerName,
+    updateOwnerName,
     addOwnerPhoneNumber,
-    updateCustomerServiceNumber
+    updateCustomerServiceNumber,
+    getAvailableShipments
 };

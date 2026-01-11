@@ -20,6 +20,7 @@ const addDriver = async (req, res) => {
 
     const transporterId = req.transporter.id;
 
+    // 1️⃣ Create driver first
     const driver = await Driver.create({
       driverName,
       driverPhoneNumber,
@@ -28,7 +29,7 @@ const addDriver = async (req, res) => {
 
     const basePath = `drivers/${transporterId}/${driver.id}`;
 
-    // 2️⃣ Upload documents
+    // 2️⃣ Upload files
     const [aadharKey, licenseKey, photoKey] = await Promise.all([
       uploadToS3({
         buffer: req.files.aadhar[0].buffer,
@@ -49,12 +50,14 @@ const addDriver = async (req, res) => {
         : null,
     ]);
 
+    // 3️⃣ Update driver with document keys
     await driver.update({
       driverAadharUpload: aadharKey,
       driverLicenseUpload: licenseKey,
       driverPhotoUpload: photoKey,
     });
 
+    // 4️⃣ Clear cache
     await redis.del(`drivers:transporter:${transporterId}`);
 
     res.status(201).json({
@@ -67,22 +70,12 @@ const addDriver = async (req, res) => {
   }
 };
 
-
-const DRIVER_LIST_CACHE_TTL = 30 * 60; // 30 minutes
+const DRIVER_LIST_CACHE_TTL = 30 * 60;
 
 const getAllDrivers = async (req, res) => {
   try {
     const transporterId = req.transporter.id;
-    const cacheKey = `drivers:transporter:${transporterId}`;
 
-    const cachedDrivers = await redis.get(cacheKey);
-    if (cachedDrivers) {
-      return res.status(200).json({
-        message: 'Drivers fetched successfully.',
-        source: 'cache',
-        drivers: JSON.parse(cachedDrivers),
-      });
-    }
 
     const drivers = await Driver.findAll({
       where: { transporterId },
@@ -91,15 +84,13 @@ const getAllDrivers = async (req, res) => {
         'id',
         'driverName',
         'driverPhoneNumber',
-        'createdAt',
+        'driverAadharUpload',
+        'driverLicenseUpload',
+        'driverPhotoUpload',
+        'status'
       ],
     });
 
-    await redis.setex(
-      cacheKey,
-      DRIVER_LIST_CACHE_TTL,
-      JSON.stringify(drivers)
-    );
 
     res.status(200).json({
       message: 'Drivers fetched successfully.',
@@ -108,12 +99,9 @@ const getAllDrivers = async (req, res) => {
     });
   } catch (error) {
     console.error('Get all drivers error:', error);
-    res.status(500).json({
-      message: 'Internal Server Error',
-    });
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };
-
 
 const getDriverDocument = async (req, res) => {
   try {

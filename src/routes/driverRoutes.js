@@ -1,6 +1,6 @@
 const express = require('express');
 const upload = require('../middlewares/upload.middleware');
-const { addDriver,getAllDrivers,getDriverDocument } = require('../controllers/driverController,js');
+const { addDriver,getAllDrivers,getDriverDocument } = require('../controllers/driverController.js');
 
 const {
   verifyJWT,

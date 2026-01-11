@@ -8,63 +8,58 @@ const Client = sequelize.define('Client', {
     primaryKey: true,
     autoIncrement: true,
   },
+
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+    validate: { isEmail: true },
+  },
+
   name: {
     type: DataTypes.STRING,
-    field: 'name',
-    allowNull: true,   //optional
+    allowNull: true,
   },
+
   phoneNumber: {
     type: DataTypes.STRING,
-    field: 'phone_number',
-    allowNull: false,
+    allowNull: true,  
     validate: {
       isTenDigitNumber(value) {
         if (value && !/^\d{10}$/.test(value)) {
           throw new Error('Phone number must be a 10 digit number');
         }
       }
-    } // not optional
+    }
   },
+
   companyName: {
     type: DataTypes.STRING,
     allowNull: true,
-    field: 'company_name'   //optional
   },
+
   companyAddress: {
     type: DataTypes.TEXT,
-    field: 'company_address',   //optional
-    allowNull: true
+    allowNull: true,
   },
-  email: {
-    type: DataTypes.STRING,
-    allowNull: false, 
-    field: 'email',
-    unique: true,
-    validate: { isEmail: true }  // not optional
-  },
+
   gstNumber: {
     type: DataTypes.STRING,
-    field: 'gst_number',
     allowNull: true,
     validate: {
-      // Custom GST validation
       isValidGST(value) {
         if (value && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(value)) {
           throw new Error('Invalid GST number format');
         }
       }
-    }  // optional
-  },  
-  createdAt: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-    field: 'created_at',
+    }
   },
-  updatedAt: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-    field: 'updated_at',
-  }
+
+  isProfileComplete: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false, 
+  },
+
 }, {
   tableName: 'clients',
   timestamps: true,
