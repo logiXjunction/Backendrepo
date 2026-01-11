@@ -11,6 +11,9 @@ const transporterRoutes = require('./routes/transporterRoutes');
 const driverRoutes = require('./routes/driverRoutes');
 const vehicleRoutes = require('./routes/vehicleRoutes');
 const documentRoutes = require('./routes/documentRoutes');
+const coverageRoutes = require('./routes/coverageRoutes.js')
+const clientRoutes= require('./routes/clientRoutes.js')
+const ftlRoutes = require('./routes/ftlRoutes.js')
 const { swaggerUi, getSwaggerDocument } = require('./config/swagger');
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -52,6 +55,9 @@ app.use('/api/transporter', transporterRoutes);
 app.use('/api/driver', driverRoutes);
 app.use('/api/vehicle', vehicleRoutes);
 app.use('/api/document', documentRoutes);
+app.use('/api/coverage',coverageRoutes);
+app.use('/api/client',clientRoutes);
+app.use('/api/ftl/',ftlRoutes);
 
 app.use((err, req, res, next) => {
   console.error('Error:', err.message);
@@ -63,29 +69,31 @@ app.use((err, req, res, next) => {
 });
 
 const startServer = async () => {
-    try {
-        const swaggerDocument = await getSwaggerDocument();
+  try {
+    const swaggerDocument = await getSwaggerDocument();
 
-        app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument)); 
-        sequelize.sync();
-
-        await sequelize.authenticate();
-        console.log('Database connected');
-        console.log('Database synchronized (tables created/verified)');
-
-        if (!redisClient.isOpen) {
-            await redisClient.connect();
-            console.log('Redis connected');
-        }
-
-        app.listen(PORT, () => {
-            console.log(`Ultron server running at http://localhost:${PORT}`);
-            console.log(`Swagger docs at http://localhost:${PORT}/docs`);
-        });
-    } catch (error) {
-        console.error('Unable to start server:', error);
-        process.exit(1);
+    app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+    if (process.env.NODE_ENV === 'development') {
+      await sequelize.sync({ alter: true });
     }
+
+    await sequelize.authenticate();
+    console.log('Database connected');
+    console.log('Database synchronized (tables created/verified)');
+
+    if (!redisClient.isOpen) {
+      await redisClient.connect();
+      console.log('Redis connected');
+    }
+
+    app.listen(PORT, () => {
+      console.log(`Ultron server running at http://localhost:${PORT}`);
+      console.log(`Swagger docs at http://localhost:${PORT}/docs`);
+    });
+  } catch (error) {
+    console.error('Unable to start server:', error);
+    process.exit(1);
+  }
 };
 
 startServer();

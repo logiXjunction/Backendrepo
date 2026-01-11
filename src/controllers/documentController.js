@@ -20,8 +20,8 @@ const submitDocument = async (req, res) => {
     // Validate document type
     const validTypes = ['gst', 'pan', 'aadhar', 'cancelledCheck', 'passBookCopy'];
     if (!validTypes.includes(key)) {
-      return res.status(400).json({ 
-        message: 'Invalid document type. Valid types: gst, pan, aadhar, cancelledCheck, passBookCopy' 
+      return res.status(400).json({
+        message: 'Invalid document type. Valid types: gst, pan, aadhar, cancelledCheck, passBookCopy'
       });
     }
 
@@ -48,16 +48,20 @@ const submitDocument = async (req, res) => {
     }
 
     // Update the specific document field
-    const documentData = document[key] || {};
-    documentData.isSubmitted = true;
-    documentData.isVerified = 'false'; // Reset to false on new submission
-    documentData.name = DOCUMENT_NAMES[key];
-    documentData.key = s3Key;
-    documentData.description = ''; // Reset description on new submission
+    const documentData = {
+      isSubmitted: true,
+      isVerified: 'false',
+      name: DOCUMENT_NAMES[key],
+      key: s3Key,
+      description: '',
+    };
 
-    await document.update({
-      [key]: documentData,
-    });
+    await document.update(
+      { [key]: documentData },
+      { silent: false }
+    );
+
+    await document.reload();
 
     res.status(200).json({
       message: `${DOCUMENT_NAMES[key]} submitted successfully`,
@@ -166,13 +170,13 @@ const getDocuments = async (req, res) => {
 const getDocumentUrl = async (req, res) => {
   try {
     const { key } = req.params;
-    const transporterId = req.transporter.id;
+    const transporterId = req.transporter.id;// from middleware
 
     // Validate document type
     const validTypes = ['gst', 'pan', 'aadhar', 'cancelledCheck', 'passBookCopy'];
     if (!validTypes.includes(key)) {
-      return res.status(400).json({ 
-        message: 'Invalid document type. Valid types: gst, pan, aadhar, cancelledCheck, passBookCopy' 
+      return res.status(400).json({
+        message: 'Invalid document type. Valid types: gst, pan, aadhar, cancelledCheck, passBookCopy'
       });
     }
 
@@ -182,15 +186,15 @@ const getDocumentUrl = async (req, res) => {
     });
 
     if (!document || !document[key]?.key) {
-      return res.status(404).json({ 
-        message: `${DOCUMENT_NAMES[key]} not found or not submitted` 
+      return res.status(404).json({
+        message: `${DOCUMENT_NAMES[key]} not found or not submitted`
       });
     }
 
     const s3Key = document[key].key;
     const signedUrl = await getSignedS3Url(s3Key);
 
-    res.json({ 
+    res.json({
       url: signedUrl,
       name: document[key].name,
     });

@@ -73,10 +73,20 @@ const Document = sequelize.define('Document', {
       description: '',
     },
     field: 'passbook_copy',
+
   },
+  status: {
+    type: DataTypes.ENUM('verified', 'unverified', 'suspended'),
+    allowNull: false,
+    defaultValue :'unverified'
+  }
+
 }, {
   tableName: 'documents',
   timestamps: true,
+  createdAt: "created_at",
+  updatedAt: "updated_at",
+
 });
 
 module.exports = Document;
