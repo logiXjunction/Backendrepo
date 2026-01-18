@@ -1,3 +1,4 @@
+const { Transporter } = require('../models');
 const Quotation = require('../models/quotation')
 
 const submitQuotation = async (req, res, next) => {
@@ -22,10 +23,12 @@ const submitQuotation = async (req, res, next) => {
         if (existing) {
             return res.status(400).json({ success: false, message: "You have already quoted for this shipment" });
         }
+        const transporter = await Transporter.findOne({where:{id:transporterId}});
 
         const newQuote = await Quotation.create({
             FtlId,
             transporterId,
+            companyName: transporter.companyName,
             baseFreight,
             odaCharges,
             detentionCharges,
@@ -48,3 +51,7 @@ const submitQuotation = async (req, res, next) => {
         next(error);
     }
 };
+
+module.exports={
+    submitQuotation
+}

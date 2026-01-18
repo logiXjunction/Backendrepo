@@ -331,12 +331,11 @@ const getAvailableShipments = async (req, res, next) => {
     try {
         const transporterId = req.transporter.id; 
 
-        // 1. Get IDs of shipments this transporter has already quoted
         const quotedShipmentIds = await Quotation.findAll({
             where: { transporterId },
             attributes: ['FtlId'],
             raw: true
-        }).then(quotes => quotes.map(q => q.shipmentId));
+        }).then(quotes => quotes.map(q => q.FtlId));
 
         // 2. Find shipments where status is 'requested' AND ID is not in quotedShipmentIds
         const shipments = await Ftl.findAll({
@@ -358,7 +357,9 @@ const getAvailableShipments = async (req, res, next) => {
         console.error('Error fetching available shipments:', error);
         next(error);
     }
-};module.exports = {
+};
+
+module.exports = {
     sendOtp,
     verifyOtp,
     registerTransporter,
