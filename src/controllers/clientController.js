@@ -1,8 +1,12 @@
-const Client = require('../models');
+const {Client} = require('../models/index');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const { redisClient } = require('../config/redis');
+const {Ftl} = require("../models/index");
+const {Quotation} = require("../models/index");
+const {Transporter} = require("../models/index");
+
 
 const OTP_EXPIRY_SECONDS = 5 * 60; // 5 minutes
 
@@ -105,28 +109,33 @@ const verifyOtp = async (req, res) => {
     return res.status(500).json({ message: 'OTP verification failed' });
   }
 };
-
 const completeProfile = async (req, res) => {
   try {
     const { name, phoneNumber, companyName, companyAddress, gstNumber } = req.body;
-    const clientId = req.user.id; // from JWT middleware
+    const clientId = req.user.id; 
 
-    if (!name || !phoneNumber)
-      return res.status(400).json({ message: 'Name and phone number are required' });
+    // Validation: Only Name and Phone Number are strictly required now
+    if (!name || !phoneNumber) {
+      return res.status(400).json({ 
+        message: 'Name and phone number are required to complete your profile.' 
+      });
+    }
 
     const client = await Client.findByPk(clientId);
     if (!client) return res.status(404).json({ message: 'Client not found' });
 
+    // Update fields - others will be null/empty if not provided
     await client.update({
       name,
       phoneNumber,
-      companyName,
-      companyAddress,
-      gstNumber,
-      isProfileComplete: true,
+      companyName: companyName || null,
+      companyAddress: companyAddress || null,
+      gstNumber: gstNumber || null,
+      isProfileComplete: true, // Profile is now considered complete
     });
 
     return res.json({
+      success: true,
       message: 'Profile completed successfully',
       client,
     });
@@ -137,8 +146,87 @@ const completeProfile = async (req, res) => {
 };
 
 
+/**
+ * Fetch shipments for the logged-in client based on status
+ * Matches the frontend tabs: requested, accepted, confirmed/ongoing, completed
+ */
+const getMyShipments = async (req, res) => {
+  try {
+    const { status } = req.query;
+    const clientId = req.user.id; 
+    console.log('i got called');
+
+    const statusArray = status.includes(',') ? status.split(',') : [status];
+
+    const shipments = await Ftl.findAll({
+      where: {
+        clientId: clientId,
+        status: statusArray
+      },
+      include: [{ model: Quotation, as: 'quotes' }], 
+      order: [['created_at', 'DESC']]
+    });
+
+    // We send it inside a 'data' object for standard practice
+    return res.status(200).json({
+      success: true,
+      data: shipments 
+    });
+  } catch (error) {
+    console.error("Fetch shipments error:", error);
+    return res.status(500).json({ success: false, message: "Error fetching shipments" });
+  }
+};
+const acceptTransporterQuote = async (req, res) => {
+  const { shipmentId, quoteId } = req.body;
+  const clientId = req.user.id;
+
+  try {
+    // 1. Find the shipment and the specific quote
+    const shipment = await Ftl.findOne({ where: { id: shipmentId, clientId } });
+    const quote = await Quotation.findOne({ where: { id: quoteId, FtlId: shipmentId } });
+
+    if (!shipment || !quote) {
+      return res.status(404).json({ message: "Shipment or Quote not found" });
+    }
+
+    // 2. Calculate final cost based on your Quotation schema
+    const totalCost = 
+      Number(quote.baseFreight) + 
+      Number(quote.odaCharges) + 
+      Number(quote.labourCharges) + 
+      Number(quote.otherCharges);
+
+    // 3. Update shipment status and final cost
+    await shipment.update({
+      status: 'accepted',
+      transporterId : quote.transporterId
+
+    });
+    
+
+    // 4. Mark the chosen quote as accepted
+    await quote.update({ status: 'accepted' });
+
+    // 5. (Optional) Reject other quotes automatically
+    await Quotation.update(
+      { status: 'rejected' },
+      { where: { FtlId: shipmentId, status: 'pending' } }
+    );
+
+    return res.status(200).json({ 
+      message: "Quote accepted. Please proceed to payment.",
+      finalCost: totalCost 
+    });
+  } catch (error) {
+    console.error("Accept quote error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
 module.exports={
     sendOtp,
     verifyOtp,
-    completeProfile
+    completeProfile,
+    acceptTransporterQuote,
+    getMyShipments,
 }

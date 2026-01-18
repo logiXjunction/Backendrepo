@@ -3,33 +3,41 @@ const sequelize = require("../config/database");
 
 const Quotation = sequelize.define('Quotation', {
     id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
     },
     FtlId: {
-        type: DataTypes.UUID,
+        type: DataTypes.INTEGER,
         allowNull: false,
-        references: { model: 'Ftls', key: 'id' }
+        references: { model: 'ftls', key: 'id' },
+        field: "ftl_id"
     },
     transporterId: {
-        type: DataTypes.UUID,
+        type: DataTypes.INTEGER,
         allowNull: false,
-        references: { model: 'transporters', key: 'id' }
+        references: { model: 'transporters', key: 'id' },
+        field: "transporter_id"
     },
-    baseFreight: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
-    odaCharges: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
-    detentionCharges: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
-    otherCharges: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
+    companyName:{
+        type: DataTypes.STRING,
+        allowNull: true,
+        field: 'company_name'
+
+    },
+    baseFreight: { type: DataTypes.DECIMAL(10, 2), allowNull: false, field:'base_freight' },
+    odaCharges: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0, field:'oda_charges' },
+    detentionCharges: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0, field:'detention_charges'},
+    otherCharges: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0, field:'other_charges' },
     
-    canMeetDates: { type: DataTypes.ENUM('yes', 'no'), defaultValue: 'yes' },
-    expectedPickupDate: { type: DataTypes.DATEONLY, allowNull: true },
-    expectedDeliveryDate: { type: DataTypes.DATEONLY, allowNull: true },
+    canMeetDates: { type: DataTypes.ENUM('yes', 'no'), defaultValue: 'yes',field:'can_meet_dates' },
+    expectedPickupDate: { type: DataTypes.DATEONLY, allowNull: true, field:'expected_pickup_date' },
+    expectedDeliveryDate: { type: DataTypes.DATEONLY, allowNull: true, field:'expected_delivery_date'},
     
-    canMeetLabour: { type: DataTypes.ENUM('yes', 'no'), defaultValue: 'yes' },
-    labourCharges: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
+    canMeetLabour: { type: DataTypes.ENUM('yes', 'no'), defaultValue: 'yes',field:'can_meet_labour' },
+    labourCharges: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0,field:'labour_charges' },
     
-    additionalNotes: { type: DataTypes.TEXT, allowNull: true },
+    additionalNotes: { type: DataTypes.TEXT, allowNull: true, field:'additional_notes' },
     status: {
         type: DataTypes.ENUM('pending', 'accepted', 'rejected'),
         defaultValue: 'pending'

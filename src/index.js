@@ -14,6 +14,7 @@ const documentRoutes = require('./routes/documentRoutes');
 const coverageRoutes = require('./routes/coverageRoutes.js')
 const clientRoutes= require('./routes/clientRoutes.js')
 const ftlRoutes = require('./routes/ftlRoutes.js')
+const quotationRoutes= require('./routes/quotationRoutes.js')
 const { swaggerUi, getSwaggerDocument } = require('./config/swagger');
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -58,6 +59,7 @@ app.use('/api/document', documentRoutes);
 app.use('/api/coverage',coverageRoutes);
 app.use('/api/client',clientRoutes);
 app.use('/api/ftl/',ftlRoutes);
+app.use('/api/quotation',quotationRoutes)
 
 app.use((err, req, res, next) => {
   console.error('Error:', err.message);
