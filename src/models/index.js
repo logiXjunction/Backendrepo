@@ -25,14 +25,12 @@ Coverage.belongsTo(Transporter, { foreignKey: 'transporterId' });
 
 // --- Client & FTL Associations ---
 Ftl.belongsTo(Client, { foreignKey: 'clientId', as: 'owner' });
-Client.hasMany(Ftl, { foreignKey: 'clientId', as: 'shipments' }); // FIXED: was Client.hasMany(Client)
+Client.hasMany(Ftl, { foreignKey: 'clientId', as: 'shipments' });
 
 // --- FTL & Quotation Associations ---
 Quotation.belongsTo(Ftl, { foreignKey: 'FtlId', as: 'shipment' });
 Ftl.hasMany(Quotation, { foreignKey: 'FtlId', as: 'quotes' });
 
-// --- Quotation & Transporter Associations (CRITICAL FOR THE MODAL) ---
-// This was missing! This allows you to see WHO sent the quote.
 Quotation.belongsTo(Transporter, { foreignKey: 'transporterId', as: 'transporter' });
 Transporter.hasMany(Quotation, { foreignKey: 'transporterId', as: 'quotes' });
 
