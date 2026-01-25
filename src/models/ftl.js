@@ -18,6 +18,15 @@ const Ftl = sequelize.define(
       },
       field: "client_id",
     },
+    transporterId:{
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: "transporters",
+        key: 'id'
+      },
+      field: 'transporter_id'
+    },
     // --- Pickup Info ---
     pickupAddressLine: {
       type: DataTypes.STRING,
@@ -123,11 +132,6 @@ const Ftl = sequelize.define(
       allowNull: false,
       field: "transport_mode",
     },
-    shipmentType: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      field: "shipment_type",
-    },
     bodyType: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -155,13 +159,18 @@ const Ftl = sequelize.define(
       defaultValue: 0,
       field: "no_of_labours",
     },
+    shipmentType: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'ftl', // Added to match controller
+      field: "shipment_type",
+    },
     status: {
       type: DataTypes.ENUM(
         "requested",
-        "offer_sent",
+        "accepted",
         "confirmed",
-        "rejected",
-        "modification_requested",
+        "ongoing",
         "completed"
       ),
       defaultValue: "requested",
@@ -174,7 +183,7 @@ const Ftl = sequelize.define(
     },
   },
   {
-    tableName: "ftl",
+    tableName: "ftls",
     timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at",
