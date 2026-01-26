@@ -27,6 +27,12 @@ const Admin = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    // },
+    role: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'admin',
+    },
   },
   {
     tableName: 'admins',
@@ -37,7 +43,7 @@ const Admin = sequelize.define(
       },
     },
   }
-);   
+);
 
 Admin.prototype.comparePassword = function (password) {
   return bcrypt.compare(password, this.password);

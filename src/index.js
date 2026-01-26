@@ -1,6 +1,4 @@
-require('dotenv').config({
-  path: require('path').resolve(__dirname, '../.env'),
-});
+require("dotenv").config({ path: "/app/.env" });
 
 const express = require('express');
 const cors = require('cors');
@@ -13,9 +11,9 @@ const driverRoutes = require('./routes/driverRoutes');
 const vehicleRoutes = require('./routes/vehicleRoutes');
 const documentRoutes = require('./routes/documentRoutes');
 const coverageRoutes = require('./routes/coverageRoutes.js')
-const clientRoutes= require('./routes/clientRoutes.js')
+const clientRoutes = require('./routes/clientRoutes.js')
 const ftlRoutes = require('./routes/ftlRoutes.js')
-const quotationRoutes= require('./routes/quotationRoutes.js')
+const quotationRoutes = require('./routes/quotationRoutes.js')
 const { swaggerUi, getSwaggerDocument } = require('./config/swagger');
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,15 +29,11 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error('Not an allowed origin'));
-    },
+    origin: true,
     credentials: true,
   })
 );
+
 
 /* -------------------- BODY PARSERS -------------------- */
 app.use(express.json());
@@ -57,11 +51,11 @@ app.use('/api/transporter', transporterRoutes);
 app.use('/api/driver', driverRoutes);
 app.use('/api/vehicle', vehicleRoutes);
 app.use('/api/document', documentRoutes);
-app.use("/api/admin",adminRoutes);
-app.use('/api/coverage',coverageRoutes);
-app.use('/api/client',clientRoutes);
-app.use('/api/ftl/',ftlRoutes);
-app.use('/api/quotation',quotationRoutes)
+app.use("/api/admin", adminRoutes);
+app.use('/api/coverage', coverageRoutes);
+app.use('/api/client', clientRoutes);
+app.use('/api/ftl/', ftlRoutes);
+app.use('/api/quotation', quotationRoutes)
 
 app.use((err, req, res, next) => {
   console.error('Error:', err.message);

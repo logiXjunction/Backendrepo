@@ -39,7 +39,7 @@ const sendOtp = async (req, res) => {
         await redisClient.setEx(`otp:${email}`, 300, otp);
 
         // Send OTP via email using nodemailer (skip in development if no credentials)
-        if (process.env.NODE_ENV === 'development' && 
+        if (process.env.NODE_ENV === 'development' &&
             (!process.env.EMAIL_USER || process.env.EMAIL_USER === 'your-gmail@gmail.com')) {
             console.log(`\n📧 [DEV MODE] OTP for ${email}: ${otp}\n`);
         } else {
@@ -113,8 +113,8 @@ const registerTransporter = async (req, res) => {
 
         // Validate required fields
         if (!email || !password || !companyName || !companyAddress || !designation || !gstNumber || !phoneNumber) {
-            return res.status(400).json({ 
-                message: 'Missing required fields. Please provide email, password, companyName, companyAddress, designation, gstNumber, and phoneNumber.' 
+            return res.status(400).json({
+                message: 'Missing required fields. Please provide email, password, companyName, companyAddress, designation, gstNumber, and phoneNumber.'
             });
         }
 
@@ -204,7 +204,7 @@ const loginTransporter = async (req, res) => {
         // Generate JWT token valid for 7 days
         // Includes role as 'transporter', email, and id
         const token = jwt.sign(
-            { 
+            {
                 id: transporter.id,
                 email: transporter.email,
                 role: 'transporter'
@@ -213,9 +213,9 @@ const loginTransporter = async (req, res) => {
             { expiresIn: '7d' }
         );
 
-        res.status(200).json({ 
+        res.status(200).json({
             token,
-            message: 'Login successful.' 
+            message: 'Login successful.'
         });
     } catch (error) {
         console.error('Error in /login:', error);
@@ -258,7 +258,7 @@ const addCinNumber = async (req, res) => {
     } catch (error) {
         console.error('Error updating CIN number:', error);
         res.status(500).json({ message: 'Internal Server Error' });
-}
+    }
 };
 
 const updateOwnerName = async (req, res) => {
@@ -278,7 +278,8 @@ const updateOwnerName = async (req, res) => {
     } catch (error) {
         console.error('Error updating owner name:', error);
         res.status(500).json({ message: 'Internal Server Error' });
-    }};
+    }
+};
 
 const addOwnerPhoneNumber = async (req, res) => {
     try {
@@ -291,7 +292,7 @@ const addOwnerPhoneNumber = async (req, res) => {
         if (!transporter) {
             return res.status(404).json({ message: 'Transporter not found.' });
         }
-        if(transporter.ownerPhoneNumber) {
+        if (transporter.ownerPhoneNumber) {
             return res.status(400).json({ message: 'Owner phone number is already set and cannot be updated.' });
         }
         transporter.ownerPhoneNumber = ownerPhoneNumber;
@@ -319,7 +320,7 @@ const updateCustomerServiceNumber = async (req, res) => {
     } catch (error) {
         console.error('Error updating customer service number:', error);
         res.status(500).json({ message: 'Internal Server Error' });
-    }   
+    }
 };
 const { Ftl, Client } = require('../models');
 
@@ -329,13 +330,14 @@ const { Ftl, Client } = require('../models');
  */
 const getAvailableShipments = async (req, res, next) => {
     try {
-        const transporterId = req.transporter.id; 
+        const transporterId = req.transporter.id;
 
+        // 1. Get IDs of shipments this transporter has already quoted
         const quotedShipmentIds = await Quotation.findAll({
             where: { transporterId },
             attributes: ['FtlId'],
             raw: true
-        }).then(quotes => quotes.map(q => q.FtlId));
+        }).then(quotes => quotes.map(q => q.shipmentId));
 
         // 2. Find shipments where status is 'requested' AND ID is not in quotedShipmentIds
         const shipments = await Ftl.findAll({
@@ -357,9 +359,7 @@ const getAvailableShipments = async (req, res, next) => {
         console.error('Error fetching available shipments:', error);
         next(error);
     }
-};
-
-module.exports = {
+}; module.exports = {
     sendOtp,
     verifyOtp,
     registerTransporter,

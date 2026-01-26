@@ -78,7 +78,7 @@ const Document = sequelize.define('Document', {
   status: {
     type: DataTypes.ENUM('verified', 'unverified', 'suspended'),
     allowNull: false,
-    defaultValue :'unverified'
+    defaultValue: 'unverified'
   }
 
 }, {
