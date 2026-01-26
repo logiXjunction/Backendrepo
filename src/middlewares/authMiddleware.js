@@ -112,6 +112,8 @@ const authenticateAdmin = (req, res, next) => {
             error: error.message 
         });
     }
+
+  }
 const clientMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -160,7 +162,7 @@ module.exports = {
   verifyJWT,
   requireTransporter,
   attachTransporter,
-  authenticateAdmin
+  authenticateAdmin,
   tempFtlTokenCheck,
   clientMiddleware
 };
