@@ -112,6 +112,7 @@ const authenticateAdmin = (req, res, next) => {
             error: error.message 
         });
     }
+  }
 const clientMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -135,7 +136,7 @@ const clientMiddleware = async (req, res, next) => {
 };
 
 
-const tempFtlTokenCheck = (req, res, next) => {
+const tempFtlTokenCheck =  async (req, res, next) => {
   const token = req.headers['x-email-token'];
 
   if (!token) {
@@ -160,7 +161,7 @@ module.exports = {
   verifyJWT,
   requireTransporter,
   attachTransporter,
-  authenticateAdmin
+  authenticateAdmin,
   tempFtlTokenCheck,
-  clientMiddleware
-};
+  clientMiddleware,
+}
