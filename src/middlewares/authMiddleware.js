@@ -52,7 +52,7 @@ const attachTransporter = async (req, res, next) => {
       });
     }
 
-    req.transporter = transporter; 
+    req.transporter = transporter;
     next();
   } catch (error) {
     console.error('Transporter middleware error:', error);
@@ -64,54 +64,96 @@ const attachTransporter = async (req, res, next) => {
 
 
 
-const authenticateAdmin = (req, res, next) => {
-    try {
-        // Get token from Authorization header
-        const authHeader = req.headers.authorization;
-        
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ 
-                message: 'Access denied. No token provided.' 
-            }); 
-        }
+// const authenticateAdmin = (req, res, next) => {
+//   try {
+//     // Get token from Authorization header
+//     const authHeader = req.headers.authorization;
 
-        const token = authHeader.split(' ')[1];
-        
-        // Verify token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        
-        // Check if user is admin
-        if (decoded.role !== 'admin') {
-            return res.status(403).json({ 
-                message: 'Access denied. Admin privileges required.' 
-            });
-        }
-        
-        // Attach admin info to request object
-        req.admin = {
-            id: decoded.id,
-            role: decoded.role
-        };
-        
-        next();
-    } catch (error) {
-        if (error.name === 'JsonWebTokenError') {
-            return res.status(401).json({ 
-                message: 'Invalid token.' 
-            });
-        }
-        
-        if (error.name === 'TokenExpiredError') {
-            return res.status(401).json({ 
-                message: 'Token expired.' 
-            });
-        }
-        
-        return res.status(500).json({ 
-            message: 'Internal server error.',
-            error: error.message 
-        });
+//     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+//       return res.status(401).json({
+//         message: 'Access denied. No token provided.'
+//       });
+//     }
+
+//     const token = authHeader.split(' ')[1];
+
+//     // Verify token
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+//     // Check if user is admin
+//     if (decoded.role !== 'admin') {
+//       return res.status(403).json({
+//         message: 'Access denied. Admin privileges required.'
+//       });
+//     }
+
+//     // Attach admin info to request object
+//     req.admin = {
+//       id: decoded.id,
+//       role: decoded.role
+//     };
+
+//     next();
+//   } catch (error) {
+//     if (error.name === 'JsonWebTokenError') {
+//       return res.status(401).json({
+//         message: 'Invalid token.'
+//       });
+//     }
+
+//     if (error.name === 'TokenExpiredError') {
+//       return res.status(401).json({
+//         message: 'Token expired.'
+//       });
+//     }
+
+//     return res.status(500).json({
+//       message: 'Internal server error.',
+//       error: error.message
+//     });
+//   }
+// };
+const authenticateAdmin = (req, res, next) => {
+  // 🔥 DEV BYPASS (LOCAL / DOCKER ONLY)
+  if (process.env.SKIP_ADMIN_AUTH === 'true') {
+    req.admin = {
+      id: 1,
+      role: 'admin',
+    };
+    return next();
+  }
+
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        message: 'Access denied. No token provided.',
+      });
     }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (decoded.role !== 'admin') {
+      return res.status(403).json({
+        message: 'Access denied. Admin privileges required.',
+      });
+    }
+
+    req.admin = {
+      id: decoded.id,
+      role: decoded.role,
+    };
+
+    next();
+  } catch (error) {
+    return res.status(401).json({
+      message: 'Invalid or expired token',
+    });
+  }
+};
+
 
   }
 const clientMiddleware = async (req, res, next) => {

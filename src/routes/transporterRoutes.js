@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { sendOtp,getAvailableShipments, verifyOtp, registerTransporter, loginTransporter, getTransporterProfile, addCinNumber, updateOwnerName, addOwnerPhoneNumber, updateCustomerServiceNumber } = require('../controllers/transporterController.js');
+const { sendOtp, getAvailableShipments, verifyOtp, registerTransporter, loginTransporter, getTransporterProfile, addCinNumber, updateOwnerName, addOwnerPhoneNumber, updateCustomerServiceNumber } = require('../controllers/transporterController.js');
 const { verifyJWT,
   requireTransporter,
   attachTransporter
@@ -20,7 +20,6 @@ router.get(
   '/available-requests',
   verifyJWT,
   requireTransporter,
-  attachTransporter,
   getAvailableShipments
 );
 
