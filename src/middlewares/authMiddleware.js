@@ -155,6 +155,7 @@ const authenticateAdmin = (req, res, next) => {
 };
 
 
+  }
 const clientMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
