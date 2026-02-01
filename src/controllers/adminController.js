@@ -1,13 +1,19 @@
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/admin');
-
+const {
+    processDocumentUrls,
+    processDriverUrls,
+    processVehicleUrls
+} = require('../utils/s3Helper');
 const {
     Transporter,
     Document,
     Driver,
     Vehicle,
     Ftl,
-    Client
+    Client,
+    Coverage,
+    Quotation
 } = require('../models/index.js');
 const { Op } = require("sequelize");
 
@@ -237,6 +243,13 @@ exports.getDrivers = async (req, res) => {
         }
 
         let drivers = await Driver.findAll();
+        if (!drivers) {
+            return res.status(401).json({
+                isValid: false,
+                message: "Driver no longer exists"
+            });
+        }
+        drivers = await processDriverUrls(drivers);
 
         return res.status(200).json({
             isValid: true,
@@ -260,31 +273,42 @@ exports.getTransporterById = async (req, res) => {
     try {
         const { id, role } = req.admin;
 
-
-        const admin = await Admin.findByPk(id);
-        if (!admin || role !== 'admin') {
-            return res.status(401).json({
+        // Authorization check
+        if (role !== 'admin') {
+            return res.status(403).json({
                 isValid: false,
-                message: 'Unauthorized access',
+                message: 'Forbidden: Admin access required',
             });
         }
 
         const { transporterId } = req.params;
+
+        // Validate transporterId
+        if (!transporterId || isNaN(transporterId)) {
+            return res.status(400).json({
+                isValid: false,
+                message: 'Invalid transporter ID',
+            });
+        }
 
         const transporter = await Transporter.findOne({
             where: { id: transporterId },
             attributes: { exclude: ['password'] },
             include: [
                 {
-                    model: Document,   // ✅ NO alias
+                    model: Document,
                     required: false,
                 },
                 {
-                    model: Driver,     // auto alias: Drivers
+                    model: Driver,
                     required: false,
                 },
                 {
-                    model: Vehicle,    // auto alias: Vehicles
+                    model: Vehicle,
+                    required: false,
+                },
+                {
+                    model: Coverage,
                     required: false,
                 },
             ],
@@ -297,10 +321,25 @@ exports.getTransporterById = async (req, res) => {
             });
         }
 
+        // Convert to plain object
+        const transporterData = transporter.toJSON();
+
+        // Process all document URLs in parallel
+        const [processedDocument, processedDrivers, processedVehicles] = await Promise.all([
+            processDocumentUrls(transporterData.Document),
+            processDriverUrls(transporterData.Drivers),
+            processVehicleUrls(transporterData.Vehicles),
+        ]);
+
+        // Update the data with signed URLs
+        transporterData.Document = processedDocument;
+        transporterData.Drivers = processedDrivers;
+        transporterData.Vehicles = processedVehicles;
+
         return res.status(200).json({
             isValid: true,
             message: 'Transporter fetched successfully',
-            data: transporter,
+            data: transporterData,
         });
 
     } catch (error) {
@@ -308,6 +347,7 @@ exports.getTransporterById = async (req, res) => {
         return res.status(500).json({
             isValid: false,
             message: 'Internal server error',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined,
         });
     }
 };
@@ -325,24 +365,51 @@ exports.getDriverById = async (req, res) => {
                 message: 'Unauthorized access',
             });
         }
+
         const { driverId } = req.params;
-        const driver = await Driver.findByPk(driverId);
         
+        // Fetch driver with associated transporter
+        const driver = await Driver.findByPk(driverId, {
+            include: [
+                {
+                    model: Transporter,
+                    // as: 'transporter', // Make sure this association is defined in your models
+                    attributes: [
+                        'id',
+                        'companyName',
+                        'ownerName',
+                        'ownerPhoneNumber',
+                        'email',
+                        'phoneNumber',
+                        'companyAddress',
+                        'gstNumber',
+                        'cinNumber',
+                        'customerServiceNumber',
+                        'status',
+                        'profileStatus',
+                        'designation'
+                    ]
+                }
+            ]
+        });
+        
+
         if (!driver) {
             return res.status(404).json({
                 isValid: false,
-                message: 'Transporter not found',
+                message: 'Driver not found',
             });
         }
+        driverProcessed = await processDriverUrls([driver]);
 
         return res.status(200).json({
             isValid: true,
             message: 'Driver fetched successfully',
-            data: driver,
+            data: driverProcessed[0],
         });
 
     } catch (error) {
-        console.error('getTransporterById error:', error);
+        console.error('getDriverById error:', error);
         return res.status(500).json({
             isValid: false,
             message: 'Internal server error',
@@ -353,8 +420,8 @@ exports.getDriverById = async (req, res) => {
 
 
 exports.getRequestedFtls = async (req, res) => {
-  try {
-            const { id, role } = req.admin;
+    try {
+        const { id, role } = req.admin;
 
 
         const admin = await Admin.findByPk(id);
@@ -365,117 +432,186 @@ exports.getRequestedFtls = async (req, res) => {
             });
         }
 
-       
-    const ftls = await Ftl.findAll({
-      where: { status: "requested" },
-      order: [["created_at", "DESC"]],
-      include: [
-        {
-          model: Client,
-        //   attributes: ["id", "name", "email", "phone"],
-        },
-      ],
-    });
 
-    res.status(200).json({
-      success: true,
-      count: ftls.length,
-      data: ftls,
-    });
-  } catch (error) {
-    console.error("Admin Requested FTL Error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch requested FTLs",
-    });
-  }
+        const ftls = await Ftl.findAll({
+            where: { status: "requested" },
+            order: [["created_at", "DESC"]],
+            include: [
+                {
+                    model: Client,
+                    //   attributes: ["id", "name", "email", "phone"],
+                    as: 'owner'
+                },
+            ],
+        });
+
+        res.status(200).json({
+            success: true,
+            count: ftls.length,
+            data: ftls,
+        });
+    } catch (error) {
+        console.error("Admin Requested FTL Error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch requested FTLs",
+        });
+    }
 };
 
 
 exports.getPendingPaymentFtls = async (req, res) => {
-  try {
-    const ftls = await Ftl.findAll({
-      where: {
-        status: "accepted"
-      },
-      order: [["created_at", "DESC"]],
-      attributes: [
-        "id",
-        "pickupCity",
-        "deliveryCity",
-        "weightKg",
-        "transportMode",
-        "shipmentType",
-        "bodyType",
-        "truckSize",
-        "cost",
-        "created_at"
-      ],
-      include: [
-        {
-          model: Client,
-          attributes: ["id", "name", "email"]
-        }
-      ]
-    });
+    try {
+        const ftls = await Ftl.findAll({
+            where: {
+                status: "accepted"
+            },
+            order: [["created_at", "DESC"]],
+            attributes: [
+                "id",
+                "pickupCity",
+                "deliveryCity",
+                "weightKg",
+                "transportMode",
+                "shipmentType",
+                "bodyType",
+                "truckSize",
+                "cost",
+                "created_at"
+            ],
+            include: [
+                {
+                    model: Client,
+                    as: 'owner',
+                    attributes: ["id", "name", "email"]
+                }
+            ]
+        });
 
-    res.status(200).json({
-      success: true,
-      count: ftls.length,
-      data: ftls
-    });
-  } catch (error) {
-    console.error("Admin Pending Payment Error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch pending payment FTLs"
-    });
-  }
+        res.status(200).json({
+            success: true,
+            count: ftls.length,
+            data: ftls
+        });
+    } catch (error) {
+        console.error("Admin Pending Payment Error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch pending payment FTLs"
+        });
+    }
 };
 
 
 exports.getActiveFtls = async (req, res) => {
-  try {
-    const ftls = await Ftl.findAll({
-      where: {
-        status: {
-          [Op.in]: ["confirmed", "ongoing", "completed"]
-        }
-      },
-      order: [["updated_at", "DESC"]],
-      attributes: [
-        "id",
-        "status",
-        "pickupCity",
-        "deliveryCity",
-        "weightKg",
-        "transportMode",
-        "shipmentType",
-        "bodyType",
-        "truckSize",
-        "cost",
-        "updated_at"
-      ],
-      include: [
-        {
-          model: Client,
-          attributes: ["id", "name", "email"]
-        }
-      ]
-    });
+    try {
+        const ftls = await Ftl.findAll({
+            where: {
+                status: {
+                    [Op.in]: ["confirmed", "ongoing", "completed"]
+                }
+            },
+            order: [["updated_at", "DESC"]],
+            attributes: [
+                "id",
+                "status",
+                "pickupCity",
+                "deliveryCity",
+                "weightKg",
+                "transportMode",
+                "shipmentType",
+                "bodyType",
+                "truckSize",
+                "cost",
+                "updated_at"
+            ],
+            include: [
+                {
+                    model: Client,
+                    as: 'owner',
+                    attributes: ["id", "name", "email"]
+                }
+            ]
+        });
 
-    res.status(200).json({
-      success: true,
-      count: ftls.length,
-      data: ftls
-    });
-  } catch (error) {
-    console.error("Admin Active FTL Error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch active FTLs"
-    });
-  }
+        res.status(200).json({
+            success: true,
+            count: ftls.length,
+            data: ftls
+        });
+    } catch (error) {
+        console.error("Admin Active FTL Error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch active FTLs"
+        });
+    }
 };
 
+
+exports.getFtlById = async (req, res) => {
+    try {
+        const { id, role } = req.admin;
+
+        // Authorization check
+        if (role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Forbidden: Admin access required',
+            });
+        }
+
+        const { ftlId } = req.params;
+
+        // Validate ftlId
+        if (!ftlId || isNaN(ftlId)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid FTL ID',
+            });
+        }
+
+        const ftl = await Ftl.findOne({
+            where: { id },
+            include: [
+                {
+                    model: Client,
+                    as: 'owner'
+                },
+                {
+                    model: Quotation,
+                    as: 'quotes',
+                    include: [
+                        {
+                            model: Transporter,
+                            as: 'transporter'
+                        }
+                    ]
+                }
+            ]
+        });
+
+
+        if (!ftl) {
+            return res.status(404).json({
+                success: false,
+                message: 'FTL request not found',
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'FTL request fetched successfully',
+            data: ftl,
+        });
+
+    } catch (error) {
+        console.error('getFtlById error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        });
+    }
+};
 

@@ -6,11 +6,15 @@ const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
 const Quotation = require('../models/quotation')
 const mailTransporter = nodemailer.createTransport({
+    secure:false,
     service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
     },
+    tls:{
+        rejectUnauthorized:false,
+    }
 });
 
 const sendOtp = async (req, res) => {
