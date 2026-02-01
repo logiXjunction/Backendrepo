@@ -13,5 +13,6 @@ router.get("/get-driver/:driverId",authenticateAdmin,adminController.getDriverBy
 router.get("/get-requested-ftls",authenticateAdmin,adminController.getRequestedFtls);
 router.get("/pending-payment-ftls", authenticateAdmin,adminController.getPendingPaymentFtls);
 router.get("/get-active-ftls",authenticateAdmin,adminController.getActiveFtls);
+router.get('/ftl/:ftlId', authenticateAdmin, adminController.getFtlById);
 
 module.exports = router; 

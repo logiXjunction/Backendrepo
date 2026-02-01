@@ -11,11 +11,15 @@ const {Transporter} = require("../models/index");
 const OTP_EXPIRY_SECONDS = 5 * 60; // 5 minutes
 
 const mailTransporter = nodemailer.createTransport({
+    secure:false,
     service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
     },
+    tls:{
+      rejectUnauthorized:false,
+    }
 });
 
 const generateOTP = () => {
