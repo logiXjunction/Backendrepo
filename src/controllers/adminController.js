@@ -131,16 +131,22 @@ exports.verifyAdminToken = async (req, res) => {
 
 exports.getTransporters = async (req, res) => {
     try {
-        const { id, role } = req.admin;
+        console.log("🔥 GET TRANSPORTERS API HIT");
+        console.log("ADMIN CONTEXT:", req.admin);
 
+        // ✅ Skip DB admin check when bypassing
+        if (!req.admin?.bypass) {
+            const { id, role } = req.admin;
 
-        const admin = await Admin.findByPk(id);
-        if (!admin || role !== "admin") {
-            return res.status(401).json({
-                isValid: false,
-                message: "Admin no longer exists"
-            });
+            const admin = await Admin.findByPk(id);
+            if (!admin || role !== "admin") {
+                return res.status(401).json({
+                    isValid: false,
+                    message: "Admin no longer exists"
+                });
+            }
         }
+
         const { searchType, searchValue, status } = req.query;
 
         const where = {};
@@ -160,9 +166,31 @@ exports.getTransporters = async (req, res) => {
             where.status = status;
         }
 
+        // const transporters = await Transporter.findAll({
+        //     where,
+        //     order: [["createdAt", "DESC"]]
+        // });
         const transporters = await Transporter.findAll({
             where,
-            order: [["createdAt", "DESC"]]
+            include: [{ model: Document }],
+            order: [["createdAt", "DESC"]],
+        });
+
+        const data = await Promise.all(
+            transporters.map(async (t) => {
+                const json = t.toJSON();
+                if (json.Document) {
+                    json.Document = await processDocumentUrls(json.Document);
+                }
+                return json;
+            })
+        );
+
+
+        return res.status(200).json({
+            isValid: true,
+            count: data.length,
+            data,
         });
 
         if (!transporters) {
@@ -171,6 +199,7 @@ exports.getTransporters = async (req, res) => {
                 message: "Transporter no longer exists"
             });
         }
+        console.log("Transporters from DB:", transporters.length);
 
         return res.status(200).json({
             isValid: true,
@@ -192,42 +221,43 @@ exports.getTransporters = async (req, res) => {
 
 exports.getClients = async (req, res) => {
     try {
-        const { id, role } = req.admin;
+        console.log("🔥 GET CLIENTS API HIT");
+        console.log("ADMIN CONTEXT:", req.admin);
 
+        // ✅ Skip DB admin check when bypassing
+        if (!req.admin?.bypass) {
+            const { id, role } = req.admin;
 
-        const admin = await Admin.findByPk(id);
-        if (!admin || role !== "admin") {
-            return res.status(401).json({
-                isValid: false,
-                message: "Admin no longer exists"
-            });
+            const admin = await Admin.findByPk(id);
+            if (!admin || role !== "admin") {
+                return res.status(401).json({
+                    isValid: false,
+                    message: "Admin no longer exists"
+                });
+            }
         }
 
-        const Clients = await Client.findAll({
-            order: [["createdAt", "DESC"]]
+        const clients = await Client.findAll({
+            order: [["createdAt", "DESC"]],
         });
-        if (!Clients) {
-            return res.status(401).json({
-                isValid: false,
-                message: "Client no longer exists"
-            });
-        }
+
+        console.log("Clients from DB:", clients.length);
 
         return res.status(200).json({
             isValid: true,
-            count: Clients.length,
-            data: Clients
+            count: clients.length,
+            data: clients,
         });
 
     } catch (error) {
-        console.error("getClient error:", error);
-
+        console.error("getClients error:", error);
         return res.status(500).json({
             isValid: false,
-            message: "Internal server error"
+            message: "Internal server error",
         });
     }
 };
+
 
 
 exports.getDrivers = async (req, res) => {
@@ -367,7 +397,7 @@ exports.getDriverById = async (req, res) => {
         }
 
         const { driverId } = req.params;
-        
+
         // Fetch driver with associated transporter
         const driver = await Driver.findByPk(driverId, {
             include: [
@@ -392,7 +422,7 @@ exports.getDriverById = async (req, res) => {
                 }
             ]
         });
-        
+
 
         if (!driver) {
             return res.status(404).json({
@@ -615,3 +645,40 @@ exports.getFtlById = async (req, res) => {
     }
 };
 
+exports.updateDocumentStatus = async (req, res) => {
+    try {
+        const { transporterId } = req.params;
+        const { status } = req.body; // e.g. "verified", "rejected"
+
+        if (!status) {
+            return res.status(400).json({
+                success: false,
+                message: "Status is required"
+            });
+        }
+
+        const transporter = await Transporter.findByPk(transporterId);
+        if (!transporter) {
+            return res.status(404).json({
+                success: false,
+                message: "Transporter not found"
+            });
+        }
+
+        transporter.status = status;
+        await transporter.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Transporter document status updated",
+            data: transporter
+        });
+
+    } catch (error) {
+        console.error("updateDocumentStatus error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};
