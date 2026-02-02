@@ -114,11 +114,11 @@ const attachTransporter = async (req, res, next) => {
 //   }
 // };
 const authenticateAdmin = (req, res, next) => {
-  // 🔥 DEV BYPASS (LOCAL / DOCKER ONLY)
+  // 🔥 DEV / DOCKER BYPASS
   if (process.env.SKIP_ADMIN_AUTH === 'true') {
     req.admin = {
-      id: 1,
       role: 'admin',
+      bypass: true,
     };
     return next();
   }
@@ -144,6 +144,7 @@ const authenticateAdmin = (req, res, next) => {
     req.admin = {
       id: decoded.id,
       role: decoded.role,
+      bypass: false,
     };
 
     next();
@@ -154,8 +155,6 @@ const authenticateAdmin = (req, res, next) => {
   }
 };
 
-
-  }
 const clientMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
