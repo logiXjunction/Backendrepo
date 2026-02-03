@@ -18,6 +18,45 @@ const { swaggerUi, getSwaggerDocument } = require('./config/swagger');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+//fake admin
+
+const bcrypt = require("bcrypt");
+const Admin = require("./models/admin");
+
+const createFakeAdmin = async () => {
+  try {
+    const adminEmail = "v@gmail.com";
+
+    const existingAdmin = await Admin.findOne({
+      where: { email: adminEmail }
+    });
+
+    if (existingAdmin) {
+      console.log("✅ Fake admin already exists");
+      return;
+    }
+
+    await Admin.create({
+      name: "Super Admin",
+      email: adminEmail,
+      password: "1",
+      role: "admin" 
+    });
+
+    console.log("🚀 Fake admin created");
+    console.log("Email: v@gmail.com");
+    console.log("Password: 1");
+  } catch (err) {
+    console.error("❌ Failed to create fake admin:", err);
+  }
+};
+
+createFakeAdmin();
+
+
+
+
+
 /* -------------------- CORS -------------------- */
 const allowedOrigins = [
   'http://localhost:5173',
@@ -72,7 +111,7 @@ const startServer = async () => {
 
     app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
     if (process.env.NODE_ENV === 'development') {
-      await sequelize.sync({ alter: true });
+      await sequelize.sync();
     }
 
     await sequelize.authenticate();

@@ -22,6 +22,8 @@ const JWT_SECRET = process.env.JWT_SECRET;
 exports.loginAdmin = async (req, res) => {
     try {
         const { email, password } = req.body;
+        console.log(email)
+        console.log(password)
 
 
         if (!email || !password) {
@@ -31,10 +33,10 @@ exports.loginAdmin = async (req, res) => {
 
 
         const admin = await Admin.findOne({ where: { email } });
+        console.log("admin found")
 
 
         if (!admin) {
-
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 

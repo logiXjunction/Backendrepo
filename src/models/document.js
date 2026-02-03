@@ -33,10 +33,10 @@ const Document = sequelize.define('Document', {
     allowNull: true,
     defaultValue: {
       isSubmitted: false,
-      isVerified: 'false',
+      isVerified: 'false', 
       name: 'Pan Card',
       key: null,
-      description: '',
+      description: '', 
     },
   },
   aadhar: {

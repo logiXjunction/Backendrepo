@@ -1,6 +1,5 @@
 const Driver = require('../models/driver');
 const uploadToS3 = require('../utils/s3upload');
-const {redisClient: redis} = require('../config/redis');
 const getSignedS3Url = require('../config/s3SignedUrl');
 
 
@@ -57,8 +56,6 @@ const addDriver = async (req, res) => {
       driverPhotoUpload: photoKey,
     });
 
-    // 4️⃣ Clear cache
-    await redis.del(`drivers:transporter:${transporterId}`);
 
     res.status(201).json({
       message: 'Driver created successfully.',

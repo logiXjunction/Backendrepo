@@ -9,11 +9,10 @@ services:
       mysql:
         condition: service_healthy
       redis:
-        condition: service_started # Redis is usually quick, 'service_started' is fine
-    # -------------------------------------------------------------------------
-    # volumes:
-    #   - .:/app
-    #   - /app/node_modules
+        condition: service_started
+    volumes:
+      - .:/app
+      - /app/node_modules
     restart: unless-stopped
 
   mysql:

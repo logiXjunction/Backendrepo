@@ -1,6 +1,5 @@
 const Vehicle = require('../models/vehicle');
 const uploadToS3 = require('../utils/s3upload');
-const {redisClient: redis} = require('../config/redis');
 const getSignedS3Url = require('../config/s3SignedUrl')
 console.log(process.env.AWS_REGION);
 const addVehicle = async (req, res) => {
@@ -11,7 +10,8 @@ const addVehicle = async (req, res) => {
       capacity,
       vehicleNumber,
       isRefrigerated,
-      bodyType
+      bodyType,
+      hasGps
     } = req.body;
 
     if (
@@ -20,7 +20,8 @@ const addVehicle = async (req, res) => {
       !capacity ||
       !vehicleNumber ||
       isRefrigerated === undefined ||
-      !bodyType
+      !bodyType ||
+      !hasGps
     ) {
       return res.status(400).json({ message: 'Missing required fields.' });
     }
@@ -59,6 +60,7 @@ const addVehicle = async (req, res) => {
       vehicleNumber,
       isRefrigerated,
       bodyType,
+      hasGps,
       transporterId,
       rcUrl: rcKey,
       roadPermitUrl: roadPermitKey,

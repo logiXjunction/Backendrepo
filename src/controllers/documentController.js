@@ -48,12 +48,12 @@ const submitDocument = async (req, res) => {
     }
 
     // Update the specific document field
-    const documentData = {
-      isSubmitted: true,
+    const documentData = {                            
+      isSubmitted: true,  
       isVerified: 'false',
       name: DOCUMENT_NAMES[key],
       key: s3Key,
-      description: '',
+      description: '', 
     };
 
     await document.update(

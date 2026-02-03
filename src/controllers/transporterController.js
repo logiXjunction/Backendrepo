@@ -5,18 +5,19 @@ const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
 const Quotation = require('../models/quotation')
-const mailTransporter = nodemailer.createTransport({
-    secure:false,
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-    tls:{
-        rejectUnauthorized:false,
-    }
-});
 
+const mailTransporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 465, // Use Port 465 for implicit SSL/TLS
+  secure: true, // Required for port 465
+  pool: true, // Production optimization: reuse connections
+  maxConnections: 3, // Don't overwhelm Gmail's limits
+  maxMessages: 100, // Close connection after 100 emails
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 const sendOtp = async (req, res) => {
     try {
         const { email } = req.body;
@@ -100,7 +101,7 @@ const verifyOtp = async (req, res) => {
         // Generate JWT token valid for 10 minutes
         const token = jwt.sign(
             { email },
-            process.env.JWT_SECRET,
+            process.env.JWT_EMAIL_SECRET,
             { expiresIn: '10m' }
         );
 
@@ -150,7 +151,7 @@ const registerTransporter = async (req, res) => {
         // Verify JWT token
         let decoded;
         try {
-            decoded = jwt.verify(token, process.env.JWT_SECRET);
+            decoded = jwt.verify(token, process.env.JWT_EMAIL_SECRET);
         } catch (err) {
             return res.status(401).json({ message: 'Unauthorized access. Please provide valid credentials.' });
         }

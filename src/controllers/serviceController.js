@@ -5,17 +5,18 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer')
 
 const mailTransporter = nodemailer.createTransport({
-    secure:false,
-    service: 'gmail',
+    host: "smtp.gmail.com",
+    port: 465, // Use Port 465 for implicit SSL/TLS
+    secure: true, // Required for port 465
+    pool: true, // Production optimization: reuse connections
+    maxConnections: 3, // Don't overwhelm Gmail's limits
+    maxMessages: 100, // Close connection after 100 emails
     auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        pass: process.env.EMAIL_PASS, // MUST be a 16-character App Password
     },
-    tls:{
-        rejectUnauthorized:false,
-    }
+    // Removed rejectUnauthorized: false -> Verification is now ACTIVE
 });
-
 const sendEmailOtp = async (req, res) => {
     const { email } = req.body;
 
@@ -28,7 +29,7 @@ const sendEmailOtp = async (req, res) => {
     await redisClient.setEx(`otp:${email}`, 300, otp); // 5 mins
 
     await mailTransporter.sendMail({
-        from: process.env.EMAIL_USER, 
+        from: process.env.EMAIL_USER,
         to: email,
         subject: 'Verify your email',
         text: `Your OTP is ${otp}. Valid for 5 minutes.`,
@@ -249,7 +250,7 @@ const createFtlShipment = async (req, res, next) => {
 };
 // --------------------added whole by amit
 
-module.exports={
+module.exports = {
     sendEmailOtp,
     verifyEmailOtp,
     createFtlShipment

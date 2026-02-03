@@ -24,15 +24,24 @@ router.get(
 );
 
 // Submit a single document independently - format: /add-{key}
+// ... imports ...
+
 router.post(
   '/add-:key',
   verifyJWT,
   requireTransporter,
   attachTransporter,
-  upload.single('file'),
+  (req, res, next) => {
+    upload.single('file')(req, res, (err) => {
+      if (err) {
+        const message = err.code === 'LIMIT_FILE_SIZE' ? 'File too large (Max 5MB)' : err.message;
+        return res.status(400).json({ message });
+      }
+      next();
+    });
+  },
   submitDocument
 );
-
 // Get S3 signed URL for a specific document
 router.get(
   '/:key',
