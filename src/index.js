@@ -113,6 +113,10 @@ const startServer = async () => {
     if (process.env.NODE_ENV === 'development') {
       await sequelize.sync();
     }
+    if(process.env.NODE_ENV === 'production'){
+      await sequelize.sync({alter:true})
+    }
+
 
     await sequelize.authenticate();
     console.log('Database connected');
