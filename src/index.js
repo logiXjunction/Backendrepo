@@ -19,39 +19,38 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 //fake admin
-
-const bcrypt = require("bcrypt");
 const Admin = require("./models/admin");
+if (process.env.NODE_ENV === 'development') {
+  const createFakeAdmin = async () => {
+    try {
+      const adminEmail = "v@gmail.com";
 
-const createFakeAdmin = async () => {
-  try {
-    const adminEmail = "v@gmail.com";
+      const existingAdmin = await Admin.findOne({
+        where: { email: adminEmail }
+      });
 
-    const existingAdmin = await Admin.findOne({
-      where: { email: adminEmail }
-    });
+      if (existingAdmin) {
+        console.log("✅ Fake admin already exists");
+        return;
+      }
 
-    if (existingAdmin) {
-      console.log("✅ Fake admin already exists");
-      return;
+      await Admin.create({
+        name: "Super Admin",
+        email: adminEmail,
+        password: "1",
+        role: "admin"
+      });
+
+      console.log("🚀 Fake admin created");
+      console.log("Email: v@gmail.com");
+      console.log("Password: 1");
+    } catch (err) {
+      console.error("❌ Failed to create fake admin:", err);
     }
+  };
 
-    await Admin.create({
-      name: "Super Admin",
-      email: adminEmail,
-      password: "1",
-      role: "admin" 
-    });
-
-    console.log("🚀 Fake admin created");
-    console.log("Email: v@gmail.com");
-    console.log("Password: 1");
-  } catch (err) {
-    console.error("❌ Failed to create fake admin:", err);
-  }
-};
-
-createFakeAdmin();
+  createFakeAdmin();
+}
 
 
 
@@ -68,7 +67,13 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: true,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
@@ -109,27 +114,22 @@ const startServer = async () => {
   try {
     const swaggerDocument = await getSwaggerDocument();
 
-    app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+    if (process.env.NODE_ENV !== 'production') {
+      app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+    }
     if (process.env.NODE_ENV === 'development') {
+      await sequelize.sync({ alter: true });
+    } else {
       await sequelize.sync();
     }
-    if(process.env.NODE_ENV === 'production'){
-      await sequelize.sync({alter:true})
-    }
-
-
     await sequelize.authenticate();
     console.log('Database connected');
     console.log('Database synchronized (tables created/verified)');
-
-    if (!redisClient.isOpen) {
-      await redisClient.connect();
-      console.log('Redis connected');
-    }
-
     app.listen(PORT, () => {
       console.log(`Ultron server running at http://localhost:${PORT}`);
-      console.log(`Swagger docs at http://localhost:${PORT}/docs`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`Swagger docs at http://localhost:${PORT}/docs`);
+      }
     });
   } catch (error) {
     console.error('Unable to start server:', error);
