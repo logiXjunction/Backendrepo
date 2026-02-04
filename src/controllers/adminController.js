@@ -36,10 +36,7 @@ exports.loginAdmin = async (req, res) => {
         if (!admin) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
-
-        const isValid = await admin.comparePassword(password);
-
-        if (!isValid) {
+        if (password!=admin.password) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 

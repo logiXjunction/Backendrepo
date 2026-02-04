@@ -37,19 +37,7 @@ const Admin = sequelize.define(
   {
     tableName: 'admins',
     timestamps: true,
-    hooks: {
-      beforeSave: async (admin) => {
-        if (admin.changed("password")) {
-          admin.password = await bcrypt.hash(admin.password, 10);
-        }
-      },
-    },
-
   }
 );
-
-Admin.prototype.comparePassword = function (password) {
-  return bcrypt.compare(password, this.password);
-};
 
 module.exports = Admin;
