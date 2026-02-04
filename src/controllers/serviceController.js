@@ -3,39 +3,86 @@ const crypto = require('crypto');
 const { redisClient } = require('../config/redis');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer')
+const resend = require('../config/resend');
 
-const mailTransporter = nodemailer.createTransport({
+let mailTransporter;
+
+if (process.env.NODE_ENV === 'development') {
+  mailTransporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
-    port: 465, // Use Port 465 for implicit SSL/TLS
-    secure: true, // Required for port 465
-    pool: true, // Production optimization: reuse connections
-    maxConnections: 3, // Don't overwhelm Gmail's limits
-    maxMessages: 100, // Close connection after 100 emails
+    port: 465,
+    secure: true,
+    pool: true,
+    maxConnections: 3,
+    maxMessages: 100,
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS, // MUST be a 16-character App Password
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS, // Gmail App Password
     },
-    // Removed rejectUnauthorized: false -> Verification is now ACTIVE
-});
+  });
+}
 const sendEmailOtp = async (req, res) => {
-    const { email } = req.body;
+  try {
+    let { email } = req.body;
 
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
-        return res.status(400).json({ message: 'Invalid email' });
+      return res.status(400).json({ message: 'Invalid email' });
+    }
+
+    email = email.toLowerCase().trim();
+
+    // Rate limit OTP
+    const existingOtp = await redisClient.get(`otp:${email}`);
+    if (existingOtp) {
+      return res.status(429).json({
+        message: 'Too many OTP requests. Please try again later.',
+      });
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    await redisClient.setEx(`otp:${email}`, 300, otp); // 5 mins
+    // Store OTP for 5 minutes
+    await redisClient.set(`otp:${email}`, otp, { EX: 300 });
 
-    await mailTransporter.sendMail({
+    const subject = 'Verify your email';
+    const html = `
+      <div style="font-family: Arial, sans-serif">
+        <h2>Email Verification</h2>
+        <p>Your OTP is:</p>
+        <h1 style="letter-spacing: 5px;">${otp}</h1>
+        <p>This OTP is valid for 5 minutes.</p>
+        <p>If you didn’t request this, ignore this email.</p>
+      </div>
+    `;
+
+    /* -------- EMAIL SEND -------- */
+    if (process.env.NODE_ENV === 'development') {
+      // DEV → Nodemailer
+      await mailTransporter.sendMail({
         from: process.env.EMAIL_USER,
         to: email,
-        subject: 'Verify your email',
-        text: `Your OTP is ${otp}. Valid for 5 minutes.`,
-    });
+        subject,
+        html,
+      });
 
-    res.json({ success: true, message: 'OTP sent' });
+      console.log(`📧 [DEV] Email OTP for ${email}: ${otp}`);
+    } else {
+      // PROD → Resend
+      await resend.emails.send({
+        from: 'Logix <no-reply@logixjunction.com>',
+        to: email,
+        subject,
+        html,
+      });
+    }
+    /* ---------------------------- */
+
+    return res.json({ success: true, message: 'OTP sent' });
+
+  } catch (error) {
+    console.error('sendEmailOtp error:', error);
+    return res.status(500).json({ message: 'Server Error' });
+  }
 };
 
 const verifyEmailOtp = async (req, res) => {

@@ -6,66 +6,92 @@ const { redisClient } = require('../config/redis');
 const {Ftl} = require("../models/index");
 const {Quotation} = require("../models/index");
 const {Transporter} = require("../models/index");
+const resend = require('../config/resend');
 
 
 const OTP_EXPIRY_SECONDS = 5 * 60; // 5 minutes
+let mailTransporter;
 
-const mailTransporter = nodemailer.createTransport({
-    secure:false,
+if (process.env.NODE_ENV === 'development') {
+  mailTransporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS, // Gmail App Password
     },
-    tls:{
-      rejectUnauthorized:false,
-    }
-});
-
+    tls: {
+      rejectUnauthorized: false,
+    },
+  });
+}
 const generateOTP = () => {
     return crypto.randomInt(100000, 999999).toString();
 };
-
 const sendOTPEmail = async (email, otp) => {
-    await mailTransporter.sendMail({
-        from: `"Your App" <${process.env.EMAIL_USER}>`,
-        to: email,
-        subject: 'Your Login OTP',
-        html: `
-      <h2>OTP Verification</h2>
-      <p>Your OTP is:</p>
-      <h1>${otp}</h1>
-      <p>Valid for 5 minutes.</p>
-    `,
-    });
-};
+  const subject = 'Your Login OTP';
+  const html = `
+    <h2>OTP Verification</h2>
+    <p>Your OTP is:</p>
+    <h1>${otp}</h1>
+    <p>Valid for 5 minutes.</p>
+  `;
 
+  if (process.env.NODE_ENV === 'development') {
+    // DEV → Nodemailer
+    await mailTransporter.sendMail({
+      from: `"Your App" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject,
+      html,
+    });
+
+    console.log(`📧 [DEV] OTP for ${email}: ${otp}`);
+  } else {
+    // PROD → Resend
+    await resend.emails.send({
+      from: 'Logix <no-reply@logixjunction.com>',
+      to: email,
+      subject,
+      html,
+    });
+  }
+};
 /* ------------------------------------------------------------------ */
 /* CONTROLLERS */
 /* ------------------------------------------------------------------ */
 const sendOtp = async (req, res) => {
-    try {
-        const { email } = req.body;
+  try {
+    let { email } = req.body;
 
-        if (!email)
-            return res.status(400).json({ message: 'Email is required' });
+    if (!email)
+      return res.status(400).json({ message: 'Email is required' });
 
-        const otp = generateOTP();
+    email = email.toLowerCase().trim();
 
-        // Save OTP in Redis
-        await redisClient.set(
-            `otp:${email}`,
-            otp,
-            { EX: OTP_EXPIRY_SECONDS }
-        );
-
-        await sendOTPEmail(email, otp);
-
-        return res.json({ message: 'OTP sent successfully' });
-    } catch (err) {
-        console.error('Send OTP Error:', err);
-        return res.status(500).json({ message: 'Failed to send OTP' });
+    // Rate-limit OTP
+    const existingOtp = await redisClient.get(`otp:${email}`);
+    if (existingOtp) {
+      return res.status(429).json({
+        message: 'Too many OTP requests. Please try again later.',
+      });
     }
+
+    const otp = generateOTP();
+
+    // Save OTP in Redis
+    await redisClient.set(
+      `otp:${email}`,
+      otp,
+      { EX: OTP_EXPIRY_SECONDS }
+    );
+
+    await sendOTPEmail(email, otp);
+
+    return res.json({ message: 'OTP sent successfully' });
+  } catch (err) {
+    console.error('Send OTP Error:', err);
+    return res.status(500).json({ message: 'Failed to send OTP' });
+  }
 };
 
 /**
