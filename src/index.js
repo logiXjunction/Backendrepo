@@ -17,6 +17,7 @@ const quotationRoutes = require('./routes/quotationRoutes.js')
 const { swaggerUi, getSwaggerDocument } = require('./config/swagger');
 const app = express();
 const PORT = process.env.PORT || 3000;
+const seedAdmin = require('./seeders/seedAdmin');
 
 //fake admin
 const Admin = require("./models/admin");
@@ -125,6 +126,7 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log('Database connected');
     console.log('Database synchronized (tables created/verified)');
+    await seedAdmin();
     app.listen(PORT, () => {
       console.log(`Ultron server running at http://localhost:${PORT}`);
       if (process.env.NODE_ENV !== 'production') {
