@@ -20,6 +20,7 @@ router.get(
   '/available-requests',
   verifyJWT,
   requireTransporter,
+  attachTransporter,
   getAvailableShipments
 );
 

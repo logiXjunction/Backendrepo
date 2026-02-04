@@ -360,6 +360,13 @@ const { Ftl, Client } = require('../models');
 const getAvailableShipments = async (req, res, next) => {
     try {
         const transporterId = req.transporter.id;
+        const transporter= await Transporter.findByPk(transporterId);
+        if(!transporter){
+            return res.status(404).json({ message: 'Transporter not found.' });
+        }
+        if(transporter.status!="verified"){
+            return res.json({message:'Transporter not verified'})
+        }
 
         // 1. Get IDs of shipments this transporter has already quoted
         const quotedShipmentIds = await Quotation.findAll({
