@@ -10,50 +10,50 @@ const resend = require('../config/resend');
 let mailTransporter;
 
 if (process.env.NODE_ENV === 'development') {
-  mailTransporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+    mailTransporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+        },
+    });
 }
 const sendOtp = async (req, res) => {
-  try {
-    let { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ message: 'Email is required' });
-    }
+    try {
+        let { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ message: 'Email is required' });
+        }
 
-    email = email.toLowerCase().trim();
+        email = email.toLowerCase().trim();
 
-    /* ---- Check if already registered ---- */
-    const existingTransporter = await Transporter.findOne({ where: { email } });
-    if (existingTransporter) {
-      return res.status(409).json({
-        message: 'Email already exists in database'
-      });
-    }
+        /* ---- Check if already registered ---- */
+        const existingTransporter = await Transporter.findOne({ where: { email } });
+        if (existingTransporter) {
+            return res.status(409).json({
+                message: 'Email already exists in database'
+            });
+        }
 
-    /* ---- Rate limit OTP ---- */
-    const existingOtp = await redisClient.get(`otp:${email}`);
-    if (existingOtp) {
-      return res.status(429).json({
-        message: 'Too many OTP requests. Please try again later.'
-      });
-    }
+        /* ---- Rate limit OTP ---- */
+        const existingOtp = await redisClient.get(`otp:${email}`);
+        if (existingOtp) {
+            return res.status(429).json({
+                message: 'Too many OTP requests. Please try again later.'
+            });
+        }
 
-    /* ---- Generate OTP ---- */
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        /* ---- Generate OTP ---- */
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    /* ---- Store OTP (5 min) ---- */
-    await redisClient.set(`otp:${email}`, otp, { EX: 300 });
+        /* ---- Store OTP (5 min) ---- */
+        await redisClient.set(`otp:${email}`, otp, { EX: 300 });
 
-    /* ---- EMAIL CONTENT ---- */
-    const subject = 'Your OTP for LogiX Junction Registration';
-    const html = `
+        /* ---- EMAIL CONTENT ---- */
+        const subject = 'Your OTP for LogiX Junction Registration';
+        const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>LogiX Junction - Email Verification</h2>
         <p>Your OTP is:</p>
@@ -67,35 +67,35 @@ const sendOtp = async (req, res) => {
       </div>
     `;
 
-    /* ---- SEND EMAIL ---- */
-    if (process.env.NODE_ENV === 'development') {
-      // DEV → Nodemailer (Gmail)
-      await mailTransporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject,
-        html,
-      });
+        /* ---- SEND EMAIL ---- */
+        if (process.env.NODE_ENV === 'development') {
+            // DEV → Nodemailer (Gmail)
+            await mailTransporter.sendMail({
+                from: process.env.EMAIL_USER,
+                to: email,
+                subject,
+                html,
+            });
 
-      console.log(`📧 [DEV] OTP for ${email}: ${otp}`);
-    } else {
-      // PROD → Resend
-      await resend.emails.send({
-        from: 'Logix <no-reply@logixjunction.com>',
-        to: email,
-        subject,
-        html,
-      });
+            console.log(`📧 [DEV] OTP for ${email}: ${otp}`);
+        } else {
+            // PROD → Resend
+            await resend.emails.send({
+                from: 'Logix <no-reply@logixjunction.com>',
+                to: email,
+                subject,
+                html,
+            });
+        }
+
+        return res.status(200).json({
+            message: `OTP sent successfully to ${email}`
+        });
+
+    } catch (error) {
+        console.error('Error in /send-otp:', error);
+        return res.status(500).json({ message: 'Server Error' });
     }
-
-    return res.status(200).json({
-      message: `OTP sent successfully to ${email}`
-    });
-
-  } catch (error) {
-    console.error('Error in /send-otp:', error);
-    return res.status(500).json({ message: 'Server Error' });
-  }
 };
 
 const verifyOtp = async (req, res) => {
@@ -360,12 +360,12 @@ const { Ftl, Client } = require('../models');
 const getAvailableShipments = async (req, res, next) => {
     try {
         const transporterId = req.transporter.id;
-        const transporter= await Transporter.findByPk(transporterId);
-        if(!transporter){
+        const transporter = await Transporter.findByPk(transporterId);
+        if (!transporter) {
             return res.status(404).json({ message: 'Transporter not found.' });
         }
-        if(transporter.status!="verified"){
-            return res.json({message:'Transporter not verified'})
+        if (transporter.status != "verified") {
+            return res.json({ message: 'Transporter not verified' })
         }
 
         // 1. Get IDs of shipments this transporter has already quoted
@@ -373,7 +373,7 @@ const getAvailableShipments = async (req, res, next) => {
             where: { transporterId },
             attributes: ['FtlId'],
             raw: true
-        }).then(quotes => quotes.map(q => q.shipmentId));
+        }).then(quotes => quotes.map(q => q.FtlId));
 
         // 2. Find shipments where status is 'requested' AND ID is not in quotedShipmentIds
         const shipments = await Ftl.findAll({
@@ -395,7 +395,56 @@ const getAvailableShipments = async (req, res, next) => {
         console.error('Error fetching available shipments:', error);
         next(error);
     }
-}; module.exports = {
+};
+
+const getConfirmedShipments = async (req, res, next) => {
+    try {
+        const transporterId = req.transporter.id;
+        const transporter = await Transporter.findByPk(transporterId);
+        if (!transporter) {
+            return res.status(404).json({ message: 'Transporter not found.' });
+        }
+
+        // 2. Find shipments where status is 'requested' AND ID is not in quotedShipmentIds
+        const shipments = await Ftl.findAll({
+            where: {
+                status: 'confirmed',
+            },
+            order: [['created_at', 'DESC']]
+        });
+
+        return res.status(200).json({
+            success: true,
+            count: shipments.length,
+            data: shipments
+        });
+    } catch (error) {
+        console.error('Error fetching confirmed shipments:', error);
+        next(error);
+    }
+};
+
+
+const getAllQuotes = async (req, res, next) => {
+    try {
+        const transporterId = req.transporter.id;
+        const quotedShipments = await Quotation.findAll({
+            where: { transporterId },
+        })
+        return res.status(200).json({
+            success: true,
+            count: quotedShipments.length,
+            data: quotedShipments
+        })
+    } catch (error) {
+        console.error('Error fetching quotes:', error);
+        next(error);
+
+    }
+
+
+}
+module.exports = {
     sendOtp,
     verifyOtp,
     registerTransporter,
@@ -405,5 +454,7 @@ const getAvailableShipments = async (req, res, next) => {
     updateOwnerName,
     addOwnerPhoneNumber,
     updateCustomerServiceNumber,
-    getAvailableShipments
+    getAvailableShipments,
+    getConfirmedShipments,
+    getAllQuotes
 };

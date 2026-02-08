@@ -534,7 +534,7 @@ exports.getActiveFtls = async (req, res) => {
         const ftls = await Ftl.findAll({
             where: {
                 status: {
-                    [Op.in]: ["confirmed", "ongoing", "completed"]
+                    [Op.in]: ["accepted","confirmed", "ongoing", "completed"]
                 }
             },
             order: [["updated_at", "DESC"]],
@@ -556,6 +556,10 @@ exports.getActiveFtls = async (req, res) => {
                     model: Client,
                     as: 'owner',
                     attributes: ["id", "name", "email"]
+                },
+                {
+                    model: Quotation,
+                    as: 'quotes'
                 }
             ]
         });
@@ -678,3 +682,60 @@ exports.updateDocumentStatus = async (req, res) => {
         });
     }
 };
+
+const {ConfirmedFtl}= require("../models");
+
+exports.adminPaymentBypass = async (req, res, next) => {
+  const transaction = await sequelize.transaction();
+  
+  try {
+    const { ftlId, clientId, transporterId, quoteId, totalValue } = req.body;
+
+    // 1. Basic validation
+    if (!ftlId || !clientId || !transporterId || !totalValue) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Missing required fields: ftlId, clientId, transporterId, totalValue" 
+      });
+    }
+
+    // 2. Create the ConfirmedFtl record
+    // Status defaults to 'paid' based on your model definition
+    const confirmedShipment = await ConfirmedFtl.create({
+      ftlId,
+      clientId,
+      transporterId,
+      totalValue,
+      status: 'paid' 
+    }, { transaction });
+
+    // 3. Update the associated Quotation to 'accepted'
+    if (quoteId) {
+      await Quotation.update(
+        { status: 'accepted' },
+        { where: { id: quoteId }, transaction }
+      );
+    }
+
+    // 4. Update the original Ftl request status (e.g., to 'confirmed')
+    // This prevents the Ftl from appearing in the "open marketplace"
+    await Ftl.update(
+        { status: 'confirmed' }, 
+        { where: { id: ftlId }, transaction }
+    );
+
+    await transaction.commit();
+
+    return res.status(201).json({
+      success: true,
+      message: "Payment bypassed and shipment confirmed successfully.",
+      data: confirmedShipment
+    });
+
+  } catch (error) {
+    await transaction.rollback();
+    console.error("Bypass Error:", error);
+    next(error);
+  }
+};
+

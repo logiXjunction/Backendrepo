@@ -207,6 +207,7 @@ const getMyShipments = async (req, res) => {
     return res.status(500).json({ success: false, message: "Error fetching shipments" });
   }
 };
+
 const acceptTransporterQuote = async (req, res) => {
   const { shipmentId, quoteId } = req.body;
   const clientId = req.user.id;

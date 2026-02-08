@@ -1,5 +1,6 @@
 const router = require('express').Router();
-const { sendOtp, getAvailableShipments, verifyOtp, registerTransporter, loginTransporter, getTransporterProfile, addCinNumber, updateOwnerName, addOwnerPhoneNumber, updateCustomerServiceNumber } = require('../controllers/transporterController.js');
+const { verify } = require('crypto');
+const { sendOtp,getConfirmedShipments,getAllQuotes, getAvailableShipments, verifyOtp, registerTransporter, loginTransporter, getTransporterProfile, addCinNumber, updateOwnerName, addOwnerPhoneNumber, updateCustomerServiceNumber } = require('../controllers/transporterController.js');
 const { verifyJWT,
   requireTransporter,
   attachTransporter
@@ -23,5 +24,6 @@ router.get(
   attachTransporter,
   getAvailableShipments
 );
-
+router.get('/confirmed-requests', verifyJWT, requireTransporter, attachTransporter, getConfirmedShipments)
+router.get('/all-quotes',verifyJWT, requireTransporter, attachTransporter, getAllQuotes)
 module.exports = router;

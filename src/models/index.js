@@ -9,6 +9,7 @@ const Coverage = require('./coverage');
 const Ftl = require('./ftl');
 const Quotation = require('./quotation');
 const Client = require('./client');
+const ConfirmedFtl= require('./confirmedFtl')
 
 // --- Transporter Associations ---
 Driver.belongsTo(Transporter, { foreignKey: 'transporterId' });
@@ -42,7 +43,8 @@ const models = {
   Coverage,
   Client,
   Ftl,
-  Quotation
+  Quotation,
+  ConfirmedFtl
 };
 
 module.exports = models;

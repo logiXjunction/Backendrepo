@@ -167,11 +167,10 @@ const Ftl = sequelize.define(
     },
     status: {
       type: DataTypes.ENUM(
-        "requested",
-        "accepted",
-        "confirmed",
-        "ongoing",
-        "completed"
+        "requested", //requested
+        "accepted", //client accepted a quote
+        "confirmed", //client payed
+        "completed" //done
       ),
       defaultValue: "requested",
       allowNull: false,

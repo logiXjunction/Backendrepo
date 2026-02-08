@@ -20,39 +20,6 @@ const PORT = process.env.PORT || 3000;
 const seedAdmin = require('./seeders/seedAdmin');
 
 //fake admin
-const Admin = require("./models/admin");
-if (process.env.NODE_ENV === 'development') {
-  const createFakeAdmin = async () => {
-    try {
-      const adminEmail = "v@gmail.com";
-
-      const existingAdmin = await Admin.findOne({
-        where: { email: adminEmail }
-      });
-
-      if (existingAdmin) {
-        console.log("✅ Fake admin already exists");
-        return;
-      }
-
-      await Admin.create({
-        name: "Super Admin",
-        email: adminEmail,
-        password: "1",
-        role: "admin"
-      });
-
-      console.log("🚀 Fake admin created");
-      console.log("Email: v@gmail.com");
-      console.log("Password: 1");
-    } catch (err) {
-      console.error("❌ Failed to create fake admin:", err);
-    }
-  };
-
-  createFakeAdmin();
-}
-
 
 
 
@@ -126,6 +93,40 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log('Database connected');
     console.log('Database synchronized (tables created/verified)');
+    const Admin = require("./models/admin");
+    if (process.env.NODE_ENV === 'development') {
+      const createFakeAdmin = async () => {
+        try {
+          const adminEmail = "v@gmail.com";
+
+          const existingAdmin = await Admin.findOne({
+            where: { email: adminEmail }
+          });
+
+          if (existingAdmin) {
+            console.log("✅ Fake admin already exists");
+            return;
+          }
+
+          await Admin.create({
+            name: "Super Admin",
+            email: adminEmail,
+            password: "1",
+            role: "admin"
+          });
+
+          console.log("🚀 Fake admin created");
+          console.log("Email: v@gmail.com");
+          console.log("Password: 1");
+        } catch (err) {
+          console.error("❌ Failed to create fake admin:", err);
+        }
+      };
+
+      createFakeAdmin();
+    }
+
+
     await seedAdmin();
     app.listen(PORT, () => {
       console.log(`Ultron server running at http://localhost:${PORT}`);
